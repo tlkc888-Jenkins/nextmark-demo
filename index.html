@@ -1,0 +1,766 @@
+<title>NextMark</title>
+<style>
+  :root{
+    --ground:#EEF3F6; --surface:#FFFFFF; --ink:#122433; --ink-soft:#4A6070;
+    --line:#D4DEE5; --accent:#FF6A2B; --accent-ink:#B23E0F;
+    --port:#D63A3A; --stbd:#128A4E; --chip:#E2EAEF;
+    --scr-bg:#071018; --scr-panel:#0D1B26; --scr-line:#1D3242; --scr-ink:#DCEAF2;
+    --scr-dim:#6E8AA0; --scr-track:#22C3DA; --scr-sea:#0A1620; --scr-land:#13232E;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0C151D; --surface:#13202B; --ink:#E6EEF4; --ink-soft:#93A9B9;
+      --line:#24384A; --accent:#FF7B42; --accent-ink:#FFA477; --chip:#1C2E3C;
+      --port:#F0605F; --stbd:#3BC47E;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0C151D; --surface:#13202B; --ink:#E6EEF4; --ink-soft:#93A9B9;
+    --line:#24384A; --accent:#FF7B42; --accent-ink:#FFA477; --chip:#1C2E3C;
+    --port:#F0605F; --stbd:#3BC47E;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground); color:var(--ink);
+    font:16px/1.55 system-ui,"Segoe UI",Roboto,sans-serif; margin:0; padding:0 20px 64px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  h1,h2,h3,.disp{font-family:"Arial Narrow","Helvetica Neue",Arial,sans-serif;
+    font-stretch:condensed; letter-spacing:.01em; text-wrap:balance;}
+  header{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; padding:34px 0 6px;}
+  h1{font-size:2.3rem; margin:0; text-transform:uppercase; letter-spacing:.04em;}
+  h1 .tick{color:var(--accent);}
+  .sub{color:var(--ink-soft); font-size:.95rem;}
+  .daysheet{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:10px 0 18px;
+    font-size:.85rem; color:var(--ink-soft);}
+  .daysheet b{color:var(--ink); font-weight:600;}
+  .dchip{background:var(--chip); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; white-space:nowrap;}
+
+  .controls{background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:14px 16px; display:flex; flex-direction:column; gap:12px; margin-bottom:14px;}
+  .crow{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .lbl{font-size:.72rem; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-soft);
+    min-width:86px; font-weight:600;}
+  .chips{display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; flex:1;}
+  .chip{background:var(--chip); border:1px solid var(--line); color:var(--ink);
+    border-radius:8px; padding:5px 10px; font-size:.82rem; cursor:pointer; white-space:nowrap;
+    font-variant-numeric:tabular-nums;}
+  .chip:hover{border-color:var(--accent);}
+  .chip.on{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;}
+  .chip:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;}
+  select,input[type="range"]{accent-color:var(--accent);}
+  select{background:var(--surface); color:var(--ink); border:1px solid var(--line);
+    border-radius:8px; padding:5px 8px; font-size:.85rem;}
+  .btn{background:var(--ink); color:var(--ground); border:none; border-radius:8px;
+    padding:7px 18px; font-size:.9rem; font-weight:600; cursor:pointer;}
+  .btn.alt{background:var(--chip); color:var(--ink); border:1px solid var(--line);}
+  .windval{font-variant-numeric:tabular-nums; font-weight:600; min-width:46px;}
+
+  /* ---- tablet ---- */
+  .tablet{background:#04090E; border-radius:22px; padding:14px; border:1px solid #1A2A36;
+    box-shadow:0 18px 50px rgba(7,16,24,.35);}
+  .screen{background:var(--scr-bg); border-radius:12px; display:flex; gap:0; overflow:hidden;
+    min-height:620px;}
+  .chartpane{flex:0 0 44%; position:relative; background:var(--scr-sea); border-right:1px solid var(--scr-line);}
+  .chartpane svg{display:block; width:100%; height:100%;}
+  .datapane{flex:1; display:flex; flex-direction:column; padding:14px; gap:10px; min-width:0;}
+  @media (max-width:860px){
+    .screen{flex-direction:column;}
+    .chartpane{flex:none; height:480px; border-right:none; border-bottom:1px solid var(--scr-line);}
+  }
+  .nextbar{display:flex; align-items:center; gap:12px; background:var(--scr-panel);
+    border:1px solid var(--scr-line); border-radius:10px; padding:10px 14px;}
+  .nextbar .nm{font-family:"Arial Narrow",Arial,sans-serif; font-stretch:condensed;
+    font-size:1.5rem; font-weight:700; color:var(--scr-ink); text-transform:uppercase;
+    letter-spacing:.03em; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .nextbar .tag{font-size:.62rem; letter-spacing:.12em; color:var(--scr-dim); text-transform:uppercase;}
+  .side{font-size:1rem; font-weight:800; letter-spacing:.08em; padding:7px 14px; border-radius:8px; color:#fff;}
+  .side.P{background:var(--port);} .side.S{background:var(--stbd);}
+  .side.N{background:#3A5468; font-weight:600;}
+  .tiles{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  .tile{background:var(--scr-panel); border:1px solid var(--scr-line); border-radius:10px;
+    padding:10px 12px 8px;}
+  .tile .k{font-size:.62rem; letter-spacing:.13em; text-transform:uppercase; color:var(--scr-dim);}
+  .tile .v{font-family:ui-monospace,Consolas,monospace; font-variant-numeric:tabular-nums;
+    font-size:1.9rem; font-weight:600; color:var(--scr-ink); line-height:1.15;}
+  .tile .u{font-size:.72rem; color:var(--scr-dim); margin-left:3px;}
+  .tile.hot .v{color:var(--scr-track);}
+  .legs{flex:1; background:var(--scr-panel); border:1px solid var(--scr-line); border-radius:10px;
+    padding:10px 12px; overflow-y:auto; min-height:120px;}
+  .legs .k{font-size:.62rem; letter-spacing:.13em; text-transform:uppercase; color:var(--scr-dim); margin-bottom:6px;}
+  .leg{display:flex; align-items:center; gap:9px; padding:4px 0; font-size:.88rem;
+    color:var(--scr-dim); font-variant-numeric:tabular-nums;}
+  .leg .dot{width:9px; height:9px; border-radius:50%; background:#2B4356; flex:none;}
+  .leg.done{color:#49657A; text-decoration:line-through;}
+  .leg.done .dot{background:#2F6E4D;}
+  .leg.now{color:var(--scr-ink); font-weight:600;}
+  .leg.now .dot{background:var(--accent); box-shadow:0 0 7px var(--accent);}
+  .leg .sd{margin-left:auto; font-size:.68rem; font-weight:700; letter-spacing:.07em;}
+  .leg .sd.P{color:var(--port);} .leg .sd.S{color:var(--stbd);}
+  .statusline{display:flex; gap:12px; align-items:center; font-size:.78rem; color:var(--scr-dim);
+    font-variant-numeric:tabular-nums;}
+  .statusline .ok{color:#3BC47E; font-weight:600;}
+
+  /* ---- below ---- */
+  section{margin-top:40px;}
+  h2{font-size:1.45rem; text-transform:uppercase; letter-spacing:.05em; margin:0 0 4px;}
+  .kick{font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink);
+    font-weight:700;}
+  .cols{display:grid; grid-template-columns:1.25fr 1fr; gap:22px; align-items:start;}
+  @media (max-width:860px){ .cols{grid-template-columns:1fr;} }
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 20px;}
+  .tbl{overflow-x:auto;}
+  table{border-collapse:collapse; width:100%; font-size:.85rem;}
+  th{font-size:.68rem; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-soft);
+    text-align:left; padding:7px 10px; border-bottom:2px solid var(--line);}
+  td{padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top;}
+  td.mono{font-family:ui-monospace,Consolas,monospace; font-size:.8rem; white-space:nowrap;
+    font-variant-numeric:tabular-nums;}
+  .st{font-size:.7rem; font-weight:700; padding:2px 8px; border-radius:999px; white-space:nowrap;}
+  .st.ok{background:color-mix(in srgb,var(--stbd) 16%, transparent); color:var(--stbd);}
+  .st.warn{background:color-mix(in srgb,var(--accent) 18%, transparent); color:var(--accent-ink);}
+  .edge{margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:13px;}
+  .edge li{padding-left:16px; border-left:3px solid var(--accent); font-size:.9rem;}
+  .edge b{display:block;}
+  .edge .q{color:var(--ink-soft); font-size:.84rem;}
+  details{margin-top:14px;}
+  summary{cursor:pointer; font-size:.85rem; color:var(--ink-soft);}
+  pre{background:var(--chip); border:1px solid var(--line); border-radius:8px; padding:12px;
+    font-size:.74rem; overflow-x:auto; max-height:340px; line-height:1.45;}
+  .foot{margin-top:46px; font-size:.78rem; color:var(--ink-soft); border-top:1px solid var(--line);
+    padding-top:14px;}
+
+  /* ---- on-the-day ingest ---- */
+  .ingest{background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; margin-bottom:14px; display:grid; grid-template-columns:260px 1fr; gap:20px;
+    align-items:start;}
+  @media (max-width:760px){ .ingest{grid-template-columns:1fr;} }
+  .paperwrap{position:relative; justify-self:center;}
+  .paper{background:#FDFCF7; color:#20242A; border:1px solid #D8D4C6; width:240px;
+    padding:16px 14px 18px; font-family:"Courier New",Courier,monospace; font-size:.72rem;
+    line-height:1.7; transform:rotate(-1.4deg); box-shadow:0 8px 22px rgba(10,20,30,.22);
+    border-radius:2px;}
+  .paper .ph{text-align:center; font-weight:700; letter-spacing:.05em; border-bottom:1px solid #B9B4A3;
+    padding-bottom:6px; margin-bottom:8px; font-size:.74rem;}
+  .paper .amend{color:#A33B2A; font-weight:700;}
+  .scanline{position:absolute; left:-6px; right:-6px; top:0; height:3px; border-radius:2px;
+    background:var(--accent); box-shadow:0 0 14px var(--accent); opacity:0; pointer-events:none;}
+  .scanning .scanline{opacity:1; animation:scan 1.1s linear 2;}
+  @keyframes scan{from{top:0} to{top:100%}}
+  @media (prefers-reduced-motion: reduce){ .scanning .scanline{animation:none; opacity:0;} }
+  .excol{display:flex; flex-direction:column; gap:10px;}
+  .exlist{display:flex; flex-direction:column; gap:5px; font-size:.86rem;}
+  .exrow{display:flex; gap:8px; align-items:center; font-variant-numeric:tabular-nums;}
+  .exrow .ok{color:var(--stbd); font-weight:700;}
+  .exrow .chg{background:color-mix(in srgb,var(--accent) 18%, transparent); color:var(--accent-ink);
+    font-size:.68rem; font-weight:700; padding:1px 8px; border-radius:999px;}
+  .exnote{font-size:.8rem; color:var(--ink-soft);}
+
+  /* ---- countdown ---- */
+  .cdstrip{background:var(--scr-panel); border:1px solid var(--accent); border-radius:10px;
+    padding:10px 16px; display:flex; align-items:center; gap:16px;}
+  .cdstrip .stage{font-size:.66rem; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); font-weight:800; min-width:110px;}
+  .cdstrip .digits{font-family:ui-monospace,Consolas,monospace; font-variant-numeric:tabular-nums;
+    font-size:2.6rem; font-weight:700; color:var(--scr-ink); line-height:1; flex:1; text-align:center;}
+  .cdstrip .hint{font-size:.7rem; color:var(--scr-dim); max-width:140px; text-align:right;}
+  .cdstrip.gun{animation:gunflash .5s steps(2) 4;}
+  @keyframes gunflash{50%{background:var(--accent);}}
+  @media (prefers-reduced-motion: reduce){ .cdstrip.gun{animation:none;} *{scroll-behavior:auto;} }
+
+  /* ---- signal / offline ---- */
+  .sigbtn{border-radius:999px; border:1px solid var(--line); padding:6px 14px; font-size:.82rem;
+    font-weight:700; cursor:pointer; letter-spacing:.03em;}
+  .sigbtn.on{background:color-mix(in srgb,var(--stbd) 14%, transparent); color:var(--stbd); border-color:var(--stbd);}
+  .sigbtn.off{background:color-mix(in srgb,var(--accent) 16%, transparent); color:var(--accent-ink); border-color:var(--accent);}
+  .offbar{display:flex; gap:10px; align-items:center; background:#2A1C0C; border:1px solid #8A5A22;
+    border-radius:8px; padding:6px 12px; font-size:.74rem; color:#F0B35C; letter-spacing:.02em;}
+  .offbar b{letter-spacing:.09em;}
+  .gpsline{display:flex; gap:14px; font-size:.7rem; color:var(--scr-dim); align-items:center;
+    font-variant-numeric:tabular-nums;}
+  .gpsline .fix{color:#3BC47E; font-weight:700;}
+
+  /* ---- phone layout ---- */
+  @media (max-width:520px){
+    body{padding:0 10px 48px;}
+    header{padding:20px 0 4px;}
+    h1{font-size:1.7rem;}
+    .sub{font-size:.8rem;}
+    .daysheet{font-size:.76rem;}
+    .controls{padding:10px 12px;}
+    .lbl{min-width:72px; font-size:.66rem;}
+    .btn{padding:8px 14px; font-size:.85rem;}
+    .tablet{padding:7px; border-radius:14px; margin:0 -4px;}
+    .chartpane{height:400px;}
+    .datapane{padding:10px; gap:8px;}
+    .tiles{gap:6px;}
+    .tile{padding:7px 9px 6px;}
+    .tile .v{font-size:1.45rem;}
+    .nextbar{padding:8px 11px;}
+    .nextbar .nm{font-size:1.15rem;}
+    .side{font-size:.82rem; padding:6px 10px;}
+    .cdstrip .digits{font-size:2rem;}
+    .cdstrip .hint{display:none;}
+    .legs{min-height:90px;}
+    .ingest{padding:12px;}
+    .paper{width:205px; font-size:.64rem;}
+    .card{padding:14px;}
+    h2{font-size:1.2rem;}
+  }
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Next<span class="tick">Mark</span></h1>
+  <span class="sub disp">Race pilot concept · running the real Sail Paradise 2026 course data, extracted automatically from the published Sailing Instructions &amp; Course Book (Southport YC)</span>
+</header>
+
+<div class="daysheet">
+  <b>Loaded ashore from the online SIs — Day 1 sheet as published:</b>
+  <span class="dchip">Rating Div 1 &amp; 2 · 3× W/L</span>
+  <span class="dchip">Performance Div 1 · Course 19</span>
+  <span class="dchip">Performance Div 2 · Course 12</span>
+  <span class="dchip">Sports Boats · Course 12</span>
+</div>
+
+<div class="ingest">
+  <div class="paperwrap" id="paperwrap">
+    <div class="paper" aria-label="Paper course sheet handed out on race morning">
+      <div class="ph">SAIL PARADISE 2026<br>DAY 1 — COURSE SHEET (REV A)</div>
+      Rating Division 1 ... 3x W/L<br>
+      Rating Division 2 ... 3x W/L<br>
+      Performance Div 1 .. Course 19<br>
+      <span class="amend">Performance Div 2 .. Course 15 *</span><br>
+      <span class="amend">Sports Boats ....... Course 15 *</span><br>
+      <span class="amend">* amended 0750 — sea state at FAD1</span>
+    </div>
+    <div class="scanline"></div>
+  </div>
+  <div class="excol">
+    <div>
+      <div class="kick">On-the-day ingest</div>
+      <h2 style="font-size:1.2rem">Course sheet handed out at the briefing? Photograph it.</h2>
+      <p class="exnote" style="max-width:58ch; margin:4px 0 8px">The RC amended this morning's sheet — the paper now disagrees with the published SIs.
+      One photo and the app re-extracts the assignments, diffs them against what it loaded ashore, and re-arms your course.</p>
+    </div>
+    <div class="crow">
+      <button class="btn" id="scanbtn">📷 Scan course sheet</button>
+      <span class="exnote" id="scanstate">Not scanned — assignments as published online.</span>
+    </div>
+    <div class="exlist" id="exlist" aria-live="polite"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="crow">
+    <span class="lbl">Course</span>
+    <div class="chips" id="chips" role="tablist" aria-label="Course selector"></div>
+  </div>
+  <div class="crow">
+    <span class="lbl">Division</span>
+    <select id="division" aria-label="Division or class">
+      <option value="">— choose your division —</option>
+    </select>
+    <span class="exnote" id="divnote"></span>
+  </div>
+  <div class="crow">
+    <span class="lbl">Clearing flag</span>
+    <select id="flag" aria-label="Clearing mark flag">
+      <option value="P" selected>Red flag — Clearing Mark to PORT</option>
+      <option value="S">Green flag — Clearing Mark to STBD</option>
+      <option value="X">No flag — Clearing Mark deleted</option>
+    </select>
+    <span class="lbl" style="min-width:auto">Wind from</span>
+    <input type="range" id="wind" min="0" max="359" value="120" step="5" aria-label="Wind direction">
+    <span class="windval" id="windval">120°</span>
+    <span class="lbl" style="min-width:auto">Sim</span>
+    <select id="simx" aria-label="Simulation speed">
+      <option value="30">30×</option><option value="60" selected>60×</option><option value="150">150×</option>
+    </select>
+    <button class="sigbtn on" id="sigbtn" aria-pressed="false" title="Toggle mobile signal to test offline mode">▲ 5G ONLINE</button>
+    <span class="lbl" style="min-width:auto">Sequence</span>
+    <select id="armlen" aria-label="Start sequence length">
+      <option value="300">5:00</option><option value="60">1:00</option><option value="15" selected>0:15 (demo)</option>
+    </select>
+    <button class="btn" id="go">Arm start</button>
+    <button class="btn alt" id="reset">Reset</button>
+  </div>
+</div>
+
+<div class="tablet"><div class="screen">
+  <div class="chartpane"><svg id="chart" aria-label="Race course chart"></svg></div>
+  <div class="datapane">
+    <div class="offbar" id="offbar" hidden>
+      <b>NO MOBILE SIGNAL</b><span>— running from cached course · GPS unaffected (satellite)</span>
+    </div>
+    <div class="cdstrip" id="cdstrip" hidden>
+      <div class="stage" id="cdstage">WARNING</div>
+      <div class="digits" id="cddig">5:00</div>
+      <div class="hint" id="cdhint">Gun starts the race automatically</div>
+    </div>
+    <div class="nextbar">
+      <div style="min-width:0;flex:1">
+        <div class="tag">Next mark</div>
+        <div class="nm" id="nextnm">—</div>
+      </div>
+      <span class="side N" id="sidebadge">—</span>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="k">SOG</div><div class="v"><span id="sog">0.0</span><span class="u">kn</span></div></div>
+      <div class="tile"><div class="k">COG</div><div class="v"><span id="cog">---</span><span class="u">°T</span></div></div>
+      <div class="tile"><div class="k">BRG to mark</div><div class="v"><span id="brg">---</span><span class="u">°T</span></div></div>
+      <div class="tile"><div class="k">DTM</div><div class="v"><span id="dtm">--.-</span><span class="u">nm</span></div></div>
+      <div class="tile hot"><div class="k">VMC</div><div class="v"><span id="vmc">0.0</span><span class="u">kn</span></div></div>
+      <div class="tile"><div class="k">TTM</div><div class="v"><span id="ttm">--:--</span></div></div>
+    </div>
+    <div class="legs"><div class="k">Course sequence — auto-advances on rounding</div><div id="leglist"></div></div>
+    <div class="statusline">
+      <span id="clock">T 00:00:00</span>
+      <span id="course-meta"></span>
+      <span class="ok" id="roundmsg"></span>
+    </div>
+    <div class="gpsline">
+      <span class="fix">● GPS FIX</span><span id="sats">12 sats · HDOP 0.8</span>
+      <span id="netstate">Net: online</span><span>Course + charts cached at ingest</span>
+    </div>
+  </div>
+</div></div>
+
+<section>
+  <div class="cols">
+    <div class="card">
+      <div class="kick">Extraction proof</div>
+      <h2>What the engine pulled from the PDFs</h2>
+      <p style="font-size:.9rem; color:var(--ink-soft); max-width:62ch">Every mark, coordinate, course sequence and rounding side on this page came from the published
+      <em>2026 Sail Paradise Sailing Instructions (incl. Amendment 1)</em> and <em>Course Book</em> — nothing typed by hand. This is the step no product on the market does today.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Mark</th><th>Description</th><th>Position (WGS84)</th><th>Status</th></tr></thead>
+        <tbody id="marktbl"></tbody>
+      </table></div>
+      <details><summary>Raw course database (JSON) — the engine's actual output</summary><pre id="json"></pre></details>
+    </div>
+    <div class="card">
+      <div class="kick">Why dumb OCR fails</div>
+      <h2>Edge cases found in these very SIs</h2>
+      <ul class="edge">
+        <li><b>The Clearing Mark has no coordinates.</b><span class="q">Laid ~0.8 nm upwind on the day; rounding side signalled by a red or green flag on the start boat — no flag means it's deleted. The app needs a two-tap on-the-day input (the flag control above), or a photo of the start boat's flag.</span></li>
+        <li><b>Courses 1–6 use relative marks.</b><span class="q">W/L marks (1, 1a, Gate 3p/3s) are laid to windward with only a bearing board on the RC vessel — and Division 1 and 2 round <em>different</em> marks on the same course number. The app must know your division.</span></li>
+        <li><b>Course 24 is "X1 — as described at briefing."</b><span class="q">No machine-readable definition exists anywhere. Needs a manual course builder as fallback.</span></li>
+        <li><b>A baked-in rules change (RRS 34).</b><span class="q">If a mark is missing or &gt;0.1 nm off station, boats round its <em>published coordinates</em>. A GPS app can actually guide this — paper can't.</span></li>
+        <li><b>Gates, not points.</b><span class="q">"Gate 3p/3s — either mark may be rounded." Rounding logic must accept a pair.</span></li>
+        <li><b>No signal past the breakers.</b><span class="q">GPS is satellite-based and needs no mobile network — only the AI extraction does. So: ingest ashore (or near the start line), cache course, marks and charts on the device, and queue any photo taken offline for extraction when signal returns. Try the signal toggle above — racing never stops.</span></li>
+        <li><b>Approximate everything.</b><span class="q">Start and finish share one "approx." coordinate; the Course Book labels its own diagrams "not for navigation." Verification screen before race day is non-negotiable.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<p class="foot">Concept demo — stylised coastline, simulated boat, not for navigation. Marks &amp; courses: 2026 Sail Paradise SIs (incl. Amendment&nbsp;1) and Course Book, Southport Yacht Club. Product name is a placeholder pending branding. Port = red, starboard = green throughout, per convention.</p>
+</div>
+
+<script>
+'use strict';
+// ---------- extracted database (engine output) ----------
+const DB = {
+  source: "2026 Sail Paradise SIs incl. Amendment 1 + Course Book (sailparadise.com.au)",
+  datum: "WGS84",
+  marks: {
+    START:   {name:"Start/Finish Line", desc:"Red cube buoy ~1nm E of Sand Pump Jetty", lat:-27.940000, lon:153.453833, approx:true},
+    SURFERS: {name:"Surfers Mark",      desc:"Large red cube buoy",                    lat:-28.002250, lon:153.446667},
+    BURLEIGH:{name:"Burleigh Mark",     desc:"Large red cube buoy",                    lat:-28.085000, lon:153.463333},
+    CURRUMBIN:{name:"Currumbin Mark",   desc:"Yellow cylindrical buoy, blue top",      lat:-28.121667, lon:153.491667},
+    SNAPPER: {name:"Snapper Rocks Mark",desc:"Yellow cylindrical buoy",                lat:-28.155500, lon:153.550000},
+    MERMAID: {name:"Mermaid Mark",      desc:"Large yellow cube buoy",                 lat:-28.043267, lon:153.454883},
+    MERMSEA: {name:"Mermaid Seaward Mark",desc:"Yellow cyl. buoy, orange top",         lat:-28.043217, lon:153.491733},
+    FAD1:    {name:"FAD1 Mark",         desc:"Yellow cone buoy marked “FAD 1”", lat:-27.988833, lon:153.529167},
+    NORTHERN:{name:"Northern Mark",     desc:"Orange cylindrical buoy",                lat:-27.892667, lon:153.476833},
+    SEAWARD: {name:"Seaward Mark (SW)", desc:"Orange cylindrical buoy",                lat:-27.963417, lon:153.475600},
+    CLEARING:{name:"Clearing Mark",     desc:"Orange cyl. buoy, black top — ~0.8nm upwind of start; side signalled by flag", lat:null, lon:null, signalled:true}
+  },
+  // C = clearing mark (side from flag); [id, side]
+  courses: {
+    7:{name:"Surfers – Currumbin", len:22.9, seq:[["C",null],["SURFERS","P"],["CURRUMBIN","P"],["SURFERS","S"]]},
+    8:{name:"Surfers – Burleigh", len:17.8, seq:[["C",null],["SURFERS","P"],["BURLEIGH","P"],["SURFERS","S"]]},
+    9:{name:"Surfers – Burleigh Ext.", len:25.6, seq:[["C",null],["SURFERS","P"],["BURLEIGH","P"],["SURFERS","S"],["C","P"],["SURFERS","P"]]},
+    10:{name:"Snapper Rocks", len:29, seq:[["C",null],["SURFERS","P"],["SNAPPER","P"],["SURFERS","S"]]},
+    11:{name:"Surfers Extended", len:15.5, seq:[["C",null],["SURFERS","P"],["C","P"],["SURFERS","P"]]},
+    12:{name:"Surfers / FAD", len:16.6, seq:[["C",null],["SURFERS","P"],["FAD1","P"],["SURFERS","S"]]},
+    13:{name:"Snapper / FAD", len:33, seq:[["C",null],["SURFERS","P"],["SNAPPER","P"],["FAD1","P"],["SURFERS","S"]]},
+    14:{name:"Surfers Paradise", len:7.7, seq:[["C",null],["SURFERS","S"]]},
+    15:{name:"Surfers – Mermaid", len:12.7, seq:[["C",null],["SURFERS","P"],["MERMAID","P"],["SURFERS","S"]]},
+    16:{name:"Surfers – Mermaid Ext.", len:16.6, seq:[["C",null],["SURFERS","P"],["MERMAID","P"],["MERMSEA","P"],["MERMAID","S"],["SURFERS","S"]]},
+    17:{name:"Mermaid Out-and-Back", len:12.7, seq:[["MERMAID","P"]]},
+    18:{name:"Mermaid Seaward Loop", len:16.5, seq:[["MERMAID","P"],["MERMSEA","P"],["MERMAID","S"]]},
+    19:{name:"Mermaid / FAD1", len:22.6, seq:[["MERMAID","P"],["FAD1","P"],["MERMAID","S"]]},
+    20:{name:"Northern / FAD1 / Mermaid", len:20.9, seq:[["NORTHERN","S"],["FAD1","S"],["MERMAID","S"]]},
+    21:{name:"Northern / Burleigh", len:23.5, seq:[["NORTHERN","S"],["BURLEIGH","S"]]},
+    22:{name:"FAD1 / Northern / Mermaid", len:27, seq:[["FAD1","P"],["NORTHERN","P"],["MERMAID","S"]]},
+    23:{name:"Northern / Seaward", len:9.3, seq:[["NORTHERN","S"],["SEAWARD","S"]]}
+  }
+};
+
+// ---------- geo helpers ----------
+const R_NM = 3440.065, D2R = Math.PI/180;
+function distNm(a,b){
+  const dLat=(b.lat-a.lat)*D2R, dLon=(b.lon-a.lon)*D2R;
+  const h=Math.sin(dLat/2)**2 + Math.cos(a.lat*D2R)*Math.cos(b.lat*D2R)*Math.sin(dLon/2)**2;
+  return 2*R_NM*Math.asin(Math.sqrt(h));
+}
+function brgTo(a,b){
+  const y=Math.sin((b.lon-a.lon)*D2R)*Math.cos(b.lat*D2R);
+  const x=Math.cos(a.lat*D2R)*Math.sin(b.lat*D2R)-Math.sin(a.lat*D2R)*Math.cos(b.lat*D2R)*Math.cos((b.lon-a.lon)*D2R);
+  return (Math.atan2(y,x)/D2R+360)%360;
+}
+function movePt(p,brgDeg,dNm){
+  const br=brgDeg*D2R, dr=dNm/R_NM, la1=p.lat*D2R, lo1=p.lon*D2R;
+  const la2=Math.asin(Math.sin(la1)*Math.cos(dr)+Math.cos(la1)*Math.sin(dr)*Math.cos(br));
+  const lo2=lo1+Math.atan2(Math.sin(br)*Math.sin(dr)*Math.cos(la1),Math.cos(dr)-Math.sin(la1)*Math.sin(la2));
+  return {lat:la2/D2R, lon:lo2/D2R};
+}
+function fmtPos(m){
+  if(m.lat==null) return "— signalled on the day";
+  const f=(v,hemi)=>{const a=Math.abs(v),d=Math.floor(a),mi=((a-d)*60).toFixed(3);return `${d}°${mi}′${hemi}`;};
+  return `${f(m.lat,"S")}, ${f(m.lon,"E")}`;
+}
+
+// ---------- divisions & day-sheet assignments ----------
+const DIVS={
+  RD1:{label:"Rating Division 1", course:null, note:"3× W/L — relative marks laid on the day (RC bearing board); pick W/L course when signalled"},
+  RD2:{label:"Rating Division 2", course:null, note:"3× W/L — Division 2 rounds Mark 1a, not Mark 1"},
+  PD1:{label:"Performance Division 1", course:19},
+  PD2:{label:"Performance Division 2", course:12},
+  SB:{label:"Sports Boats", course:12}
+};
+// what the amended paper sheet says (REV A, handed out at briefing)
+const PAPER={RD1:null, RD2:null, PD1:19, PD2:15, SB:15};
+let scanned=false, selectedDiv="";
+
+// ---------- state ----------
+let courseNo=12, flag="P", windFrom=120, simx=60;
+let running=false, boat=null, wpIdx=0, simT=0, lastTs=null, trail=[], wobP=0, finished=false, lastRound="";
+let phase="idle", preT=0, preLast=null; // idle | pre | racing
+
+function clearingPos(){ return movePt(DB.marks.START, windFrom, 0.8); }
+function activeSeq(){
+  const c=DB.courses[courseNo]; if(!c) return [];
+  const seq=[{id:"START",side:null,label:"Start"}];
+  for(const [id,side] of c.seq){
+    if(id==="C"){
+      if(flag==="X") continue;
+      seq.push({id:"CLEARING", side: side||flag, label:"Clearing Mark", signalled:!side});
+    } else seq.push({id, side, label:DB.marks[id].name});
+  }
+  seq.push({id:"START", side:null, label:"Finish"});
+  return seq;
+}
+function posOf(id){ return id==="CLEARING"? clearingPos() : {lat:DB.marks[id].lat, lon:DB.marks[id].lon}; }
+
+// ---------- chart ----------
+const COS=Math.cos(28*D2R);
+const EXT={lat0:-28.19, lat1:-27.862, lon0:153.408, lon1:153.582};
+const W=420, H=W*((EXT.lat1-EXT.lat0)/((EXT.lon1-EXT.lon0)*COS));
+const px=p=>({x:(p.lon-EXT.lon0)*COS/((EXT.lon1-EXT.lon0)*COS)*W,
+              y:(EXT.lat1-p.lat)/(EXT.lat1-EXT.lat0)*H});
+const COAST=[[-27.85,153.418],[-27.90,153.424],[-27.94,153.429],[-28.00,153.430],[-28.04,153.438],
+  [-28.08,153.449],[-28.10,153.460],[-28.13,153.478],[-28.155,153.520],[-28.168,153.547],[-28.20,153.562]];
+const PLACES=[[-27.945,"Seaway"],[-28.002,"Surfers Paradise"],[-28.09,"Burleigh Hds"],[-28.165,"Coolangatta"]];
+const svg=document.getElementById("chart");
+const S=(t,a)=>{const e=document.createElementNS("http://www.w3.org/2000/svg",t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+
+function drawChart(){
+  svg.setAttribute("viewBox",`0 0 ${W} ${H.toFixed(0)}`);
+  svg.replaceChildren();
+  // graticule
+  for(let la=-28.15; la<=-27.90; la+=0.05){const p=px({lat:la,lon:EXT.lon0});
+    svg.append(S("line",{x1:0,y1:p.y,x2:W,y2:p.y,stroke:"#10212E","stroke-width":.7}));}
+  for(let lo=153.45; lo<=153.55; lo+=0.05){const p=px({lat:EXT.lat0,lon:lo});
+    svg.append(S("line",{x1:p.x,y1:0,x2:p.x,y2:H,stroke:"#10212E","stroke-width":.7}));}
+  // land
+  let d=`M ${px({lat:COAST[0][0],lon:COAST[0][1]}).x} ${px({lat:COAST[0][0],lon:COAST[0][1]}).y}`;
+  for(const [la,lo] of COAST){const p=px({lat:la,lon:lo}); d+=` L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;}
+  d+=` L -5 ${H+5} L -5 -5 Z`;
+  svg.append(S("path",{d,fill:"var(--scr-land)",stroke:"#23404F","stroke-width":1.2}));
+  for(const [la,nm] of PLACES){const p=px({lat:la,lon:153.414});
+    const t=S("text",{x:p.x+4,y:p.y,fill:"#3E5D70","font-size":9,"font-family":"Arial Narrow, Arial"});
+    t.textContent=nm; svg.append(t);}
+  // course legs
+  const seq=activeSeq();
+  let dd="";
+  seq.forEach((wp,i)=>{const p=px(posOf(wp.id)); dd+=(i?" L":"M")+` ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;});
+  svg.append(S("path",{d:dd,fill:"none",stroke:"var(--scr-track)","stroke-width":1.6,
+    "stroke-dasharray":"7 5",opacity:.85}));
+  // leg direction arrows
+  for(let i=1;i<seq.length;i++){
+    const a=px(posOf(seq[i-1].id)), b=px(posOf(seq[i].id));
+    const mx=(a.x+b.x)/2, my=(a.y+b.y)/2, an=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+    svg.append(S("path",{d:"M -5 -3.4 L 5 0 L -5 3.4 Z",fill:"var(--scr-track)",opacity:.9,
+      transform:`translate(${mx.toFixed(1)} ${my.toFixed(1)}) rotate(${an.toFixed(1)})`}));
+  }
+  // marks
+  const usedIds=new Set(seq.map(w=>w.id));
+  for(const id in DB.marks){
+    if(id==="CLEARING" && !usedIds.has("CLEARING")) continue;
+    const m=DB.marks[id], pos=posOf(id); if(pos.lat==null) continue;
+    const p=px(pos), on=usedIds.has(id);
+    const wp=seq.find(w=>w.id===id && w.side);
+    const col= id==="START" ? "#FFB347" : wp ? (wp.side==="P"?"#E65A5A":"#2FB376") : "#51708A";
+    if(id==="START"){
+      svg.append(S("path",{d:`M ${p.x-5} ${p.y+4} L ${p.x+5} ${p.y+4} L ${p.x} ${p.y-6} Z`,
+        fill:"none",stroke:col,"stroke-width":1.8}));
+    } else {
+      svg.append(S("circle",{cx:p.x,cy:p.y,r:on?5:3.4,fill:on?col:"none",stroke:col,
+        "stroke-width":1.6,opacity:on?1:.55}));
+    }
+    const t=S("text",{x:p.x+8,y:p.y+3.5,fill:on?"var(--scr-ink)":"#51708A","font-size":9.5,
+      "font-family":"Arial Narrow, Arial","font-weight":on?700:400});
+    t.textContent=m.name.replace(" Mark","").replace("/Finish Line","/Fin");
+    if(wp){const s=S("tspan",{fill:wp.side==="P"?"#E65A5A":"#2FB376","font-weight":800});
+      s.textContent=` ${wp.side}`; t.append(s);}
+    svg.append(t);
+  }
+  // trail + boat
+  if(trail.length>1){
+    let td=""; trail.forEach((p,i)=>{const q=px(p); td+=(i?" L":"M")+` ${q.x.toFixed(1)} ${q.y.toFixed(1)}`;});
+    svg.append(S("path",{d:td,fill:"none",stroke:"var(--accent)","stroke-width":1.4,opacity:.85}));
+  }
+  if(boat){
+    const p=px(boat), hdg=boat.cog||0;
+    svg.append(S("path",{d:"M 0 -8 L 4.6 6 L 0 3.4 L -4.6 6 Z",fill:"var(--accent)",
+      stroke:"#fff","stroke-width":.7,
+      transform:`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${hdg.toFixed(1)})`}));
+  }
+  // scale bar: 2nm
+  const sb=2/((EXT.lon1-EXT.lon0)*COS*60)*W;
+  svg.append(S("line",{x1:12,y1:H-14,x2:12+sb,y2:H-14,stroke:"#51708A","stroke-width":2}));
+  const st=S("text",{x:12,y:H-20,fill:"#51708A","font-size":9,"font-family":"Arial"});
+  st.textContent="2 nm"; svg.append(st);
+}
+
+// ---------- UI ----------
+const el=id=>document.getElementById(id);
+function renderChips(){
+  const box=el("chips"); box.replaceChildren();
+  for(const n in DB.courses){
+    const b=document.createElement("button");
+    b.className="chip"+(+n===courseNo?" on":""); b.setAttribute("role","tab");
+    b.textContent=`${n} · ${DB.courses[n].name}`;
+    b.onclick=()=>{courseNo=+n; selectedDiv=""; el("division").value=""; el("divnote").textContent=""; resetSim(); renderChips();};
+    box.append(b);
+  }
+}
+function renderLegs(){
+  const seq=activeSeq(), box=el("leglist"); box.replaceChildren();
+  seq.forEach((wp,i)=>{
+    if(i===0) return;
+    const d=document.createElement("div");
+    d.className="leg"+(i<wpIdx?" done":i===wpIdx?" now":"");
+    const dot=document.createElement("span"); dot.className="dot";
+    const nm=document.createElement("span"); nm.textContent=`${i}. ${wp.label}${wp.signalled?" (flag)":""}`;
+    d.append(dot,nm);
+    if(wp.side){const s=document.createElement("span"); s.className="sd "+wp.side;
+      s.textContent=wp.side==="P"?"PORT":"STBD"; d.append(s);}
+    box.append(d);
+  });
+}
+function updateHud(){
+  const seq=activeSeq(), wp=seq[wpIdx];
+  const c=DB.courses[courseNo];
+  el("course-meta").textContent=`Course ${courseNo} · ${c.name} · ~${c.len} nm`;
+  if(!wp){el("nextnm").textContent="FINISHED"; el("sidebadge").textContent="✔"; el("sidebadge").className="side S"; return;}
+  el("nextnm").textContent=wp.label;
+  const b=el("sidebadge");
+  if(wp.side){b.textContent=wp.side==="P"?"PORT":"STBD"; b.className="side "+wp.side;}
+  else{b.textContent=wpIdx===seq.length-1?"LINE":"CROSS"; b.className="side N";}
+  if(boat){
+    const tgt=posOf(wp.id), d=distNm(boat,tgt), brg=brgTo(boat,tgt);
+    el("dtm").textContent=d<10?d.toFixed(2):d.toFixed(1);
+    el("brg").textContent=String(Math.round(brg)).padStart(3,"0");
+    el("sog").textContent=(boat.sog||0).toFixed(1);
+    el("cog").textContent=String(Math.round(boat.cog||0)).padStart(3,"0");
+    const vmc=(boat.sog||0)*Math.cos((brg-(boat.cog||0))*D2R);
+    el("vmc").textContent=vmc.toFixed(1);
+    const ttmMin=vmc>0.3? d/vmc*60 : null;
+    el("ttm").textContent=ttmMin? `${String(Math.floor(ttmMin/60)).padStart(2,"0")}:${String(Math.round(ttmMin%60)).padStart(2,"0")}` : "--:--";
+  }
+  if(phase==="pre"){
+    const mm=Math.floor(preT/60), ss=Math.ceil(preT%60)%60;
+    el("clock").textContent=`T −${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")}`;
+  } else {
+    const h=Math.floor(simT/3600),m=Math.floor(simT%3600/60),s=Math.floor(simT%60);
+    el("clock").textContent=`T ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  }
+  el("roundmsg").textContent=lastRound;
+}
+
+// ---------- divisions ----------
+function renderDivisions(){
+  const sel=el("division"), cur=sel.value;
+  sel.replaceChildren();
+  const o0=document.createElement("option"); o0.value=""; o0.textContent="— choose your division —";
+  sel.append(o0);
+  for(const k in DIVS){
+    const d=DIVS[k], o=document.createElement("option"); o.value=k;
+    o.textContent=d.label + (d.course? ` → Course ${d.course}` : " → W/L");
+    sel.append(o);
+  }
+  sel.value=cur;
+}
+function applyDivision(k){
+  selectedDiv=k;
+  const note=el("divnote");
+  if(!k){note.textContent=""; return;}
+  const d=DIVS[k];
+  if(d.course){
+    courseNo=d.course; renderChips(); resetSim();
+    note.textContent=`Day sheet${scanned?" (REV A, scanned)":""}: ${d.label} sails Course ${d.course} — armed.`;
+  } else {
+    note.textContent=d.note;
+  }
+}
+
+// ---------- photo ingest ----------
+let online=true, queuedScan=false;
+function setSignal(isOn){
+  online=isOn;
+  const b=el("sigbtn");
+  b.className="sigbtn "+(online?"on":"off");
+  b.textContent=online?"▲ 5G ONLINE":"✕ NO SIGNAL";
+  b.setAttribute("aria-pressed", online?"false":"true");
+  el("offbar").hidden=online;
+  el("netstate").textContent="Net: "+(online?"online":"offline — cached");
+  if(online && queuedScan && !scanned){
+    queuedScan=false;
+    el("scanstate").textContent="Signal back — extracting queued photo…";
+    runScan();
+  }
+}
+function runScan(){
+  if(scanned) return;
+  if(!online){
+    queuedScan=true;
+    el("scanbtn").textContent="Photo saved 📥";
+    el("scanstate").textContent="No signal — photo captured and queued. Extraction runs the moment signal returns; your cached course keeps working meanwhile.";
+    return;
+  }
+  const wrap=el("paperwrap"), btn=el("scanbtn");
+  btn.disabled=true; el("scanstate").textContent="Extracting…";
+  wrap.classList.add("scanning");
+  setTimeout(()=>{
+    wrap.classList.remove("scanning");
+    scanned=true;
+    const list=el("exlist"); list.replaceChildren();
+    for(const k in DIVS){
+      const before=DIVS[k].course, after=PAPER[k];
+      const row=document.createElement("div"); row.className="exrow";
+      const chk=document.createElement("span"); chk.className="ok"; chk.textContent="✓";
+      const lbl=document.createElement("span");
+      lbl.textContent=`${DIVS[k].label} → ${after? "Course "+after : "3× W/L"}`;
+      row.append(chk,lbl);
+      if(after!==before){
+        const c=document.createElement("span"); c.className="chg";
+        c.textContent=`changed · was ${before? "Course "+before : "W/L"}`;
+        row.append(c);
+        DIVS[k].course=after;
+      }
+      list.append(row);
+    }
+    el("scanstate").textContent="Sheet ingested — 5 assignments read, 2 changed vs the published SIs.";
+    renderDivisions();
+    if(selectedDiv) applyDivision(selectedDiv); else el("divnote").textContent="Amendment detected: Performance Div 2 & Sports Boats now sail Course 15.";
+    btn.textContent="Scanned ✓";
+  }, 2300);
+}
+function renderMarkTable(){
+  const tb=el("marktbl"); tb.replaceChildren();
+  for(const id in DB.marks){
+    const m=DB.marks[id], tr=document.createElement("tr");
+    const st=m.signalled?'<span class="st warn">signalled on day</span>'
+      : m.approx?'<span class="st warn">approx.</span>':'<span class="st ok">plotted ✓</span>';
+    tr.innerHTML=`<td><b>${m.name}</b></td><td>${m.desc}</td><td class="mono">${fmtPos(m)}</td><td>${st}</td>`;
+    tb.append(tr);
+  }
+  el("json").textContent=JSON.stringify(DB,null,1);
+}
+
+// ---------- start sequence ----------
+function armStart(sec){
+  phase="pre"; preT=sec; preLast=null;
+  const strip=el("cdstrip"); strip.hidden=false; strip.classList.remove("gun");
+  el("go").textContent="Abort";
+  requestAnimationFrame(preTick);
+}
+function preTick(ts){
+  if(phase!=="pre") return;
+  if(preLast==null) preLast=ts;
+  preT-=(ts-preLast)/1000; preLast=ts;
+  if(preT<=0){
+    el("cdstage").textContent="START";
+    el("cddig").textContent="GUN";
+    el("cdhint").textContent="Racing — auto-advance armed";
+    el("cdstrip").classList.add("gun");
+    setTimeout(()=>{ el("cdstrip").hidden=true; },2400);
+    phase="racing"; running=true; lastTs=null;
+    el("go").textContent="Pause";
+    requestAnimationFrame(tick);
+    return;
+  }
+  const mm=Math.floor(preT/60), ss=Math.floor(preT%60);
+  el("cddig").textContent=`${mm}:${String(ss).padStart(2,"0")}`;
+  el("cdstage").textContent= preT>240 ? "WARNING" : preT>60 ? "PREPARATORY · P" : "LAST MINUTE";
+  el("cdhint").textContent= preT>60 ? "Gun starts the race automatically" : "Clear air — find your hole";
+  updateHud();
+  requestAnimationFrame(preTick);
+}
+
+// ---------- sim ----------
+function resetSim(){
+  running=false; finished=false; phase="idle"; wpIdx=1; simT=0; lastTs=null; trail=[]; lastRound="";
+  boat={...posOf("START"), sog:0, cog:0};
+  el("go").textContent="Arm start";
+  el("cdstrip").hidden=true; el("cdstrip").classList.remove("gun");
+  renderLegs(); drawChart(); updateHud();
+}
+function tick(ts){
+  if(!running) return;
+  if(lastTs==null) lastTs=ts;
+  const dt=Math.min((ts-lastTs)/1000,0.1)*simx; lastTs=ts; simT+=dt;
+  const seq=activeSeq(), wp=seq[wpIdx];
+  if(wp){
+    const tgt=posOf(wp.id), brg=brgTo(boat,tgt), d=distNm(boat,tgt);
+    wobP+=dt/40;
+    const wob=Math.sin(wobP)*10*Math.min(1,d/0.4);
+    const hdg=(brg+wob+360)%360;
+    const base=7.6, angOff=Math.abs(((brg-windFrom+540)%360)-180);
+    boat.sog=Math.max(4.5, base-(angOff<45?1.8:0)+Math.sin(wobP*1.7)*0.5);
+    const np=movePt(boat,hdg,boat.sog*dt/3600);
+    boat.lat=np.lat; boat.lon=np.lon; boat.cog=hdg;
+    trail.push({lat:boat.lat,lon:boat.lon});
+    if(trail.length>900) trail.shift();
+    if(d<0.035){
+      if(wp.side) lastRound=`Rounded ${wp.label} to ${wp.side==="P"?"PORT":"STBD"} ✓`;
+      else if(wpIdx===seq.length-1){lastRound="Finished — line crossed ✓"; finished=true; running=false; phase="idle"; el("go").textContent="Arm start";}
+      wpIdx++;
+      renderLegs();
+    }
+  }
+  drawChart(); updateHud();
+  if(running) requestAnimationFrame(tick);
+}
+
+el("go").onclick=()=>{
+  if(phase==="idle"){ if(finished) resetSim(); armStart(+el("armlen").value); return; }
+  if(phase==="pre"){ resetSim(); return; }
+  running=!running;
+  el("go").textContent=running?"Pause":"Resume";
+  if(running){lastTs=null; requestAnimationFrame(tick);}
+};
+el("reset").onclick=resetSim;
+el("flag").onchange=e=>{flag=e.target.value; resetSim();};
+el("wind").oninput=e=>{windFrom=+e.target.value; el("windval").textContent=windFrom+"°"; resetSim();};
+el("simx").onchange=e=>{simx=+e.target.value;};
+el("division").onchange=e=>applyDivision(e.target.value);
+el("scanbtn").onclick=runScan;
+el("sigbtn").onclick=()=>setSignal(!online);
+
+renderChips(); renderDivisions(); renderMarkTable(); resetSim();
+</script>
