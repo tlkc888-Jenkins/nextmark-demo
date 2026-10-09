@@ -326,6 +326,7 @@
   <div class="crow">
     <span class="lbl">On the water</span>
     <button class="btn alt" id="gpsbtn" title="Use the phone's real GPS instead of the simulator">📍 Live GPS</button>
+    <button class="btn alt" id="pingbtn" title="RC anchors wherever they like — tap at the start boat to pin the real line. SI mark coordinates never move.">⚓ Ping line here</button>
     <button class="btn alt" id="savecard" title="Save a PNG race card of your track">💾 Race card</button>
     <button class="btn alt" id="savegpx" title="Export raw track as GPX">⬇ GPX track</button>
     <span class="exnote" id="savenote"></span>
@@ -485,7 +486,8 @@ let courseNo=12, flag="P", windFrom=120, simx=60;
 let running=false, boat=null, wpIdx=0, simT=0, lastTs=null, trail=[], wobP=0, finished=false, lastRound="";
 let phase="idle", preT=0, preLast=null; // idle | pre | racing
 
-function clearingPos(){ return movePt(DB.marks.START, windFrom, 0.8); }
+let startOverride=null; // RC anchors wherever they like — one tap pins the real line; SI marks never move
+function clearingPos(){ return movePt(posOf("START"), windFrom, 0.8); }
 function activeSeq(){
   const c=DB.courses[courseNo]; if(!c) return [];
   const seq=[{id:"START",side:null,label:"Start"}];
@@ -498,7 +500,10 @@ function activeSeq(){
   seq.push({id:"START", side:null, label:"Finish"});
   return seq;
 }
-function posOf(id){ return id==="CLEARING"? clearingPos() : {lat:DB.marks[id].lat, lon:DB.marks[id].lon}; }
+function posOf(id){
+  if(id==="START" && startOverride) return {...startOverride};
+  return id==="CLEARING"? clearingPos() : {lat:DB.marks[id].lat, lon:DB.marks[id].lon};
+}
 
 // ---------- chart ----------
 const BASE_EXT={lat0:-28.19, lat1:-27.862, lon0:153.408, lon1:153.582};
@@ -967,6 +972,19 @@ el("division").onchange=e=>applyDivision(e.target.value);
 el("scanbtn").onclick=runScan;
 el("sigbtn").onclick=()=>setSignal(!online);
 el("gpsbtn").onclick=()=>setGps(!gpsMode);
+el("pingbtn").onclick=()=>{
+  if(startOverride){
+    startOverride=null;
+    el("pingbtn").textContent="⚓ Ping line here"; el("pingbtn").classList.remove("live");
+    saveNote("Line ping cleared — start/finish back at published SI position.");
+  } else {
+    if(!boat){ saveNote("No position yet — enable Live GPS (or the simulator) first."); return; }
+    startOverride={lat:boat.lat, lon:boat.lon};
+    el("pingbtn").textContent="⚓ Line pinged ✓"; el("pingbtn").classList.add("live");
+    saveNote("Start/finish pinned at your position. Marks stay at SI coordinates; Clearing Mark re-laid upwind of the pinged line.");
+  }
+  drawChart(); updateHud();
+};
 el("savecard").onclick=raceCard;
 el("savegpx").onclick=saveGpx;
 el("racesearch").oninput=e=>renderRaces(e.target.value);
