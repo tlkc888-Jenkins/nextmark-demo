@@ -1,3 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#071018">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
 <title>NextMark</title>
 <style>
   :root{
@@ -180,6 +192,25 @@
     font-variant-numeric:tabular-nums;}
   .gpsline .fix{color:#3BC47E; font-weight:700;}
 
+  /* ---- race finder ---- */
+  .finder{background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:14px 16px; margin-bottom:14px;}
+  .finder input{width:100%; background:var(--ground); color:var(--ink); border:1px solid var(--line);
+    border-radius:8px; padding:9px 12px; font-size:.95rem;}
+  .srows{display:flex; flex-direction:column; gap:6px; margin-top:10px;}
+  .srow{display:flex; gap:10px; align-items:center; padding:8px 10px; border:1px solid var(--line);
+    border-radius:8px; cursor:pointer; background:var(--surface);}
+  .srow:hover{border-color:var(--accent);}
+  .srow .rn{font-weight:600; font-size:.9rem;}
+  .srow .rc{font-size:.76rem; color:var(--ink-soft);}
+  .srow .note{font-size:.72rem; color:var(--ink-soft); margin-left:auto; text-align:right; max-width:40%;}
+  .schip{font-size:.66rem; font-weight:700; padding:2px 9px; border-radius:999px; white-space:nowrap;}
+  .schip.loaded{background:color-mix(in srgb,var(--stbd) 16%, transparent); color:var(--stbd);}
+  .schip.online{background:color-mix(in srgb,var(--track,#17B8CE) 20%, transparent); color:#0E7D8E;}
+  .schip.pending{background:var(--chip); color:var(--ink-soft);}
+
+  .btn.live{background:var(--stbd); color:#fff;}
+
   /* ---- phone layout ---- */
   @media (max-width:520px){
     body{padding:0 10px 48px;}
@@ -221,6 +252,13 @@
   <span class="dchip">Performance Div 1 · Course 19</span>
   <span class="dchip">Performance Div 2 · Course 12</span>
   <span class="dchip">Sports Boats · Course 12</span>
+</div>
+
+<div class="finder">
+  <div class="kick">Find your race</div>
+  <input id="racesearch" type="search" placeholder="Search any race — try “sydney”, “southport”, “gladstone”…" aria-label="Search races">
+  <div class="srows" id="racerows"></div>
+  <p class="exnote" style="margin:8px 0 0">Packs marked <b>loaded</b> are extracted and cached for offline racing. In the production app, any race with SIs online gets extracted on demand in ~30 seconds.</p>
 </div>
 
 <div class="ingest">
@@ -284,6 +322,13 @@
     </select>
     <button class="btn" id="go">Arm start</button>
     <button class="btn alt" id="reset">Reset</button>
+  </div>
+  <div class="crow">
+    <span class="lbl">On the water</span>
+    <button class="btn alt" id="gpsbtn" title="Use the phone's real GPS instead of the simulator">📍 Live GPS</button>
+    <button class="btn alt" id="savecard" title="Save a PNG race card of your track">💾 Race card</button>
+    <button class="btn alt" id="savegpx" title="Export raw track as GPX">⬇ GPX track</button>
+    <span class="exnote" id="savenote"></span>
   </div>
 </div>
 
@@ -456,9 +501,19 @@ function activeSeq(){
 function posOf(id){ return id==="CLEARING"? clearingPos() : {lat:DB.marks[id].lat, lon:DB.marks[id].lon}; }
 
 // ---------- chart ----------
-const COS=Math.cos(28*D2R);
-const EXT={lat0:-28.19, lat1:-27.862, lon0:153.408, lon1:153.582};
-const W=420, H=W*((EXT.lat1-EXT.lat0)/((EXT.lon1-EXT.lon0)*COS));
+const BASE_EXT={lat0:-28.19, lat1:-27.862, lon0:153.408, lon1:153.582};
+let EXT={...BASE_EXT}, COS=Math.cos(28*D2R);
+const W=420; let H=W*((EXT.lat1-EXT.lat0)/((EXT.lon1-EXT.lon0)*COS));
+function fitExtent(){
+  EXT={...BASE_EXT};
+  if(boat && (boat.lat<EXT.lat0+0.005||boat.lat>EXT.lat1-0.005||boat.lon<EXT.lon0+0.005||boat.lon>EXT.lon1-0.005)){
+    const m=0.03;
+    EXT.lat0=Math.min(EXT.lat0,boat.lat-m); EXT.lat1=Math.max(EXT.lat1,boat.lat+m);
+    EXT.lon0=Math.min(EXT.lon0,boat.lon-m); EXT.lon1=Math.max(EXT.lon1,boat.lon+m);
+  }
+  COS=Math.abs(Math.cos((EXT.lat0+EXT.lat1)/2*D2R));
+  H=W*((EXT.lat1-EXT.lat0)/((EXT.lon1-EXT.lon0)*COS));
+}
 const px=p=>({x:(p.lon-EXT.lon0)*COS/((EXT.lon1-EXT.lon0)*COS)*W,
               y:(EXT.lat1-p.lat)/(EXT.lat1-EXT.lat0)*H});
 const COAST=[[-27.85,153.418],[-27.90,153.424],[-27.94,153.429],[-28.00,153.430],[-28.04,153.438],
@@ -468,12 +523,13 @@ const svg=document.getElementById("chart");
 const S=(t,a)=>{const e=document.createElementNS("http://www.w3.org/2000/svg",t);for(const k in a)e.setAttribute(k,a[k]);return e;};
 
 function drawChart(){
+  fitExtent();
   svg.setAttribute("viewBox",`0 0 ${W} ${H.toFixed(0)}`);
   svg.replaceChildren();
   // graticule
-  for(let la=-28.15; la<=-27.90; la+=0.05){const p=px({lat:la,lon:EXT.lon0});
+  for(let la=Math.ceil(EXT.lat0/0.05)*0.05; la<=EXT.lat1; la+=0.05){const p=px({lat:la,lon:EXT.lon0});
     svg.append(S("line",{x1:0,y1:p.y,x2:W,y2:p.y,stroke:"#10212E","stroke-width":.7}));}
-  for(let lo=153.45; lo<=153.55; lo+=0.05){const p=px({lat:EXT.lat0,lon:lo});
+  for(let lo=Math.ceil(EXT.lon0/0.05)*0.05; lo<=EXT.lon1; lo+=0.05){const p=px({lat:EXT.lat0,lon:lo});
     svg.append(S("line",{x1:p.x,y1:0,x2:p.x,y2:H,stroke:"#10212E","stroke-width":.7}));}
   // land
   let d=`M ${px({lat:COAST[0][0],lon:COAST[0][1]}).x} ${px({lat:COAST[0][0],lon:COAST[0][1]}).y}`;
@@ -517,6 +573,13 @@ function drawChart(){
     if(wp){const s=S("tspan",{fill:wp.side==="P"?"#E65A5A":"#2FB376","font-weight":800});
       s.textContent=` ${wp.side}`; t.append(s);}
     svg.append(t);
+  }
+  // direct line boat → next mark (same geometry the BRG tile reads)
+  const nxt=seq[wpIdx];
+  if(boat && nxt){
+    const a=px(boat), b2=px(posOf(nxt.id));
+    svg.append(S("line",{x1:a.x,y1:a.y,x2:b2.x,y2:b2.y,stroke:"#FFD24A","stroke-width":1.6,
+      "stroke-dasharray":"2.5 4",opacity:.95}));
   }
   // trail + boat
   if(trail.length>1){
@@ -682,6 +745,148 @@ function renderMarkTable(){
   el("json").textContent=JSON.stringify(DB,null,1);
 }
 
+// ---------- race finder ----------
+const RACES=[
+  {name:"Sail Paradise 2026", club:"Southport Yacht Club", where:"Gold Coast QLD",
+   kw:"sail paradise southport gold coast surfers syc", status:"loaded",
+   note:"17 courses + 10 marks extracted · cached offline"},
+  {name:"Rolex Sydney Hobart 2026", club:"CYCA", where:"Sydney NSW",
+   kw:"rolex sydney hobart cyca bass strait", status:"online",
+   note:"SIs online at cyca.com.au — tap to queue extraction"},
+  {name:"Brisbane to Gladstone 2027", club:"QCYC", where:"Brisbane QLD",
+   kw:"brisbane gladstone qcyc b2g", status:"pending",
+   note:"SIs not yet published — watching the noticeboard"},
+  {name:"SYC Club Racing 2026–27", club:"Southport Yacht Club", where:"Gold Coast QLD",
+   kw:"southport yacht club racing season syc", status:"online",
+   note:"Season SIs online — tap to queue extraction"}
+];
+function renderRaces(filter){
+  const box=el("racerows"); box.replaceChildren();
+  const q=(filter||"").toLowerCase().trim();
+  const hits=RACES.filter(r=>!q || (r.name+" "+r.club+" "+r.where+" "+r.kw).toLowerCase().includes(q));
+  if(!hits.length){
+    const d=document.createElement("div"); d.className="exnote";
+    d.textContent=`No pack for “${filter}” yet — in production this fires a live AI search of club noticeboards and racingrulesofsailing.org.`;
+    box.append(d); return;
+  }
+  for(const r of hits){
+    const row=document.createElement("div"); row.className="srow"; row.setAttribute("role","button"); row.tabIndex=0;
+    const txt=document.createElement("div");
+    txt.innerHTML=`<div class="rn">${r.name}</div><div class="rc">${r.club} · ${r.where}</div>`;
+    const chip=document.createElement("span"); chip.className="schip "+r.status;
+    chip.textContent=r.status==="loaded"?"LOADED ✓":r.status==="online"?"SIs ONLINE":"PENDING";
+    const note=document.createElement("span"); note.className="note"; note.textContent=r.note;
+    row.append(txt,chip,note);
+    const act=()=>{
+      if(r.status==="loaded"){ note.textContent="Pack active — courses & marks below ✓"; }
+      else if(r.status==="online"){ note.textContent="Queued — production app extracts this in ~30 s"; }
+      else { note.textContent="Watching — you'll be notified when SIs publish"; }
+    };
+    row.onclick=act; row.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();act();}};
+    box.append(row);
+  }
+}
+
+// ---------- live GPS ----------
+let gpsMode=false, gpsWatch=null, lastFix=null, gunTs=null;
+function onFix(p){
+  const c=p.coords, prev=lastFix;
+  lastFix={lat:c.latitude, lon:c.longitude, t:p.timestamp};
+  if(!boat) boat={lat:c.latitude, lon:c.longitude, sog:0, cog:0};
+  boat.lat=c.latitude; boat.lon=c.longitude;
+  if(c.speed!=null && isFinite(c.speed)) boat.sog=c.speed*1.94384;
+  else if(prev){ const dt=(p.timestamp-prev.t)/1000; if(dt>0.5) boat.sog=distNm(prev,boat)/dt*3600; }
+  if(c.heading!=null && isFinite(c.heading)) boat.cog=c.heading;
+  else if(prev && distNm(prev,boat)>0.0005) boat.cog=brgTo(prev,boat);
+  trail.push({lat:boat.lat, lon:boat.lon, t:p.timestamp});
+  if(trail.length>5000) trail.shift();
+  if(phase==="racing"){
+    if(gunTs) simT=(Date.now()-gunTs)/1000;
+    const seq=activeSeq(), wp=seq[wpIdx];
+    if(wp && distNm(boat,posOf(wp.id))<0.035){
+      if(wp.side) lastRound=`Rounded ${wp.label} to ${wp.side==="P"?"PORT":"STBD"} ✓`;
+      else if(wpIdx===seq.length-1){lastRound="Finished — line crossed ✓"; finished=true; phase="idle"; el("go").textContent="Arm start";}
+      wpIdx++; renderLegs();
+    }
+  }
+  drawChart(); updateHud();
+}
+function setGps(on){
+  const b=el("gpsbtn");
+  if(on && !("geolocation" in navigator)){ el("sats").textContent="No GPS in this browser"; return; }
+  gpsMode=on;
+  if(on){
+    running=false; trail=[]; el("sats").textContent="acquiring fix…";
+    b.textContent="📍 GPS LIVE"; b.classList.add("live");
+    gpsWatch=navigator.geolocation.watchPosition(
+      p=>{ el("sats").textContent=`GPS ±${Math.round(p.coords.accuracy)} m`; onFix(p); },
+      err=>{ el("sats").textContent="GPS blocked here — open the public link (not the preview) and allow location";
+        b.classList.remove("live"); b.textContent="📍 Live GPS"; gpsMode=false; },
+      {enableHighAccuracy:true, maximumAge:1000, timeout:20000});
+  } else {
+    if(gpsWatch!=null) navigator.geolocation.clearWatch(gpsWatch);
+    gpsWatch=null; lastFix=null;
+    b.classList.remove("live"); b.textContent="📍 Live GPS";
+    el("sats").textContent="12 sats · HDOP 0.8";
+    resetSim();
+  }
+}
+
+// ---------- race card + GPX export ----------
+function saveNote(msg){ el("savenote").textContent=msg; }
+function raceCard(){
+  if(trail.length<2){ saveNote("No track yet — sail (or simulate) a race first."); return; }
+  fitExtent();
+  const scale=2.4, cw=W*scale, chH=H*scale, head=170, cv=document.createElement("canvas");
+  cv.width=cw; cv.height=chH+head;
+  const g=cv.getContext("2d");
+  const P=p=>{const q=px(p); return [q.x*scale, head+q.y*scale];};
+  g.fillStyle="#071018"; g.fillRect(0,0,cv.width,cv.height);
+  // header
+  const c=DB.courses[courseNo], now=new Date();
+  g.fillStyle="#FF6A2B"; g.font="bold 44px Arial Narrow, Arial"; g.fillText("NEXTMARK RACE CARD", 28, 56);
+  g.fillStyle="#DCEAF2"; g.font="30px Arial Narrow, Arial";
+  g.fillText(`Course ${courseNo} · ${c.name} · ~${c.len} nm`, 28, 100);
+  g.fillStyle="#6E8AA0"; g.font="24px Arial";
+  const h=Math.floor(simT/3600),m=Math.floor(simT%3600/60),s=Math.floor(simT%60);
+  g.fillText(`${now.toLocaleDateString()} · elapsed ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")} · ${gpsMode?"live GPS":"simulated"} · ${Math.max(0,wpIdx-1)} marks rounded`, 28, 136);
+  // land
+  g.fillStyle="#13232E"; g.beginPath();
+  COAST.forEach(([la,lo],i)=>{const [x,y]=P({lat:la,lon:lo}); i?g.lineTo(x,y):g.moveTo(x,y);});
+  g.lineTo(-10,cv.height+10); g.lineTo(-10,head-10); g.closePath(); g.fill();
+  // course line
+  const seq=activeSeq();
+  g.strokeStyle="#22C3DA"; g.lineWidth=2.5; g.setLineDash([10,8]); g.beginPath();
+  seq.forEach((wp,i)=>{const [x,y]=P(posOf(wp.id)); i?g.lineTo(x,y):g.moveTo(x,y);}); g.stroke();
+  // marks
+  g.setLineDash([]); g.font="bold 22px Arial Narrow, Arial";
+  for(const wp of seq){ const [x,y]=P(posOf(wp.id));
+    g.fillStyle= wp.side==="P" ? "#E65A5A" : wp.side==="S" ? "#2FB376" : "#FFB347";
+    g.beginPath(); g.arc(x,y,8,0,7); g.fill();
+    g.fillStyle="#DCEAF2"; g.fillText(wp.label.replace(" Mark",""), x+13, y+7);
+  }
+  // track
+  g.strokeStyle="#FF6A2B"; g.lineWidth=3.5; g.beginPath();
+  trail.forEach((p,i)=>{const [x,y]=P(p); i?g.lineTo(x,y):g.moveTo(x,y);}); g.stroke();
+  cv.toBlob(b=>{
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(b);
+    a.download=`nextmark-course${courseNo}-${now.toISOString().slice(0,10)}.png`;
+    a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    saveNote("Race card saved — check Downloads/Photos. (Blocked in the chat preview; works on the public link.)");
+  },"image/png");
+}
+function saveGpx(){
+  if(trail.length<2){ saveNote("No track yet — sail (or simulate) a race first."); return; }
+  const pts=trail.map(p=>`<trkpt lat="${p.lat.toFixed(6)}" lon="${p.lon.toFixed(6)}">${p.t?`<time>${new Date(p.t).toISOString()}</time>`:""}</trkpt>`).join("\n");
+  const gpx=`<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="NextMark" xmlns="http://www.topografix.com/GPX/1/1">\n<trk><name>NextMark Course ${courseNo} — ${DB.courses[courseNo].name}</name><trkseg>\n${pts}\n</trkseg></trk>\n</gpx>`;
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([gpx],{type:"application/gpx+xml"}));
+  a.download=`nextmark-course${courseNo}-track.gpx`;
+  a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  saveNote("GPX saved — drop it into ChartedSails, raceQs or any analysis tool.");
+}
+
 // ---------- start sequence ----------
 function armStart(sec){
   phase="pre"; preT=sec; preLast=null;
@@ -699,9 +904,9 @@ function preTick(ts){
     el("cdhint").textContent="Racing — auto-advance armed";
     el("cdstrip").classList.add("gun");
     setTimeout(()=>{ el("cdstrip").hidden=true; },2400);
-    phase="racing"; running=true; lastTs=null;
-    el("go").textContent="Pause";
-    requestAnimationFrame(tick);
+    phase="racing"; gunTs=Date.now();
+    if(gpsMode){ el("go").textContent="Racing (GPS)"; }
+    else { running=true; lastTs=null; el("go").textContent="Pause"; requestAnimationFrame(tick); }
     return;
   }
   const mm=Math.floor(preT/60), ss=Math.floor(preT%60);
@@ -714,8 +919,8 @@ function preTick(ts){
 
 // ---------- sim ----------
 function resetSim(){
-  running=false; finished=false; phase="idle"; wpIdx=1; simT=0; lastTs=null; trail=[]; lastRound="";
-  boat={...posOf("START"), sog:0, cog:0};
+  running=false; finished=false; phase="idle"; wpIdx=1; simT=0; lastTs=null; trail=[]; lastRound=""; gunTs=null;
+  if(!gpsMode) boat={...posOf("START"), sog:0, cog:0};
   el("go").textContent="Arm start";
   el("cdstrip").hidden=true; el("cdstrip").classList.remove("gun");
   renderLegs(); drawChart(); updateHud();
@@ -734,7 +939,7 @@ function tick(ts){
     boat.sog=Math.max(4.5, base-(angOff<45?1.8:0)+Math.sin(wobP*1.7)*0.5);
     const np=movePt(boat,hdg,boat.sog*dt/3600);
     boat.lat=np.lat; boat.lon=np.lon; boat.cog=hdg;
-    trail.push({lat:boat.lat,lon:boat.lon});
+    trail.push({lat:boat.lat,lon:boat.lon,t:Date.now()});
     if(trail.length>900) trail.shift();
     if(d<0.035){
       if(wp.side) lastRound=`Rounded ${wp.label} to ${wp.side==="P"?"PORT":"STBD"} ✓`;
@@ -761,6 +966,17 @@ el("simx").onchange=e=>{simx=+e.target.value;};
 el("division").onchange=e=>applyDivision(e.target.value);
 el("scanbtn").onclick=runScan;
 el("sigbtn").onclick=()=>setSignal(!online);
+el("gpsbtn").onclick=()=>setGps(!gpsMode);
+el("savecard").onclick=raceCard;
+el("savegpx").onclick=saveGpx;
+el("racesearch").oninput=e=>renderRaces(e.target.value);
 
-renderChips(); renderDivisions(); renderMarkTable(); resetSim();
+renderChips(); renderDivisions(); renderMarkTable(); renderRaces(""); resetSim();
+
+// offline app shell (PWA) — no-op where service workers aren't allowed
+if("serviceWorker" in navigator && location.protocol==="https:"){
+  navigator.serviceWorker.register("./sw.js").catch(()=>{});
+}
 </script>
+</body>
+</html>
