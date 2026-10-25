@@ -45,6 +45,36 @@ throttles it. That is why the app holds the screen awake. If recording does
 stop, the track resumes with a visible **gap** — never a straight line across
 water the boat did not sail.
 
+## Sharing the course to the crew
+
+There is no server and no accounts, so eight phones are eight independent apps —
+which means the course has to travel. **Share course to crew** puts the whole
+course inside a link: marks, sides, any mark you added by hand, a pinned start
+line. The crew tap it in the group chat and their app offers to load it.
+
+A few things it is careful about:
+
+- It rides in the URL **fragment**, so the course is never sent to the host and
+  never lands in anyone's logs.
+- It carries a **checksum**. Chat apps wrap, truncate and append to URLs, and a
+  half-decoded course that still parsed would put the wrong marks on someone's
+  chart. A damaged link is rejected with "ask for it again".
+- Nothing is applied on arrival. The link opens a panel showing the course in
+  full; the crew member taps to load it.
+- A link made for a different club's pack, or by a newer version of the app, is
+  refused rather than guessed at.
+
+A six-mark course makes a link of about 285 characters.
+
+### Crew mode
+
+Carried by the share link, and switchable in Settings. On a boat one person
+runs the start, so crew mode hides the start sequence, the line pin and all
+course editing — eight phones cannot drift apart — and replaces them with a
+single **Start recording**. Each crew member still gets their own track, their
+own numbers and their own roundings, which is real redundancy if the helm's
+phone goes over the side.
+
 ## Storage
 
 Everything stays on the device that recorded it. Nothing is uploaded.
@@ -107,6 +137,7 @@ derived there, so no conversion is done by hand.
 ```sh
 node app/geo.test.mjs      # geometry, quadrants, coordinate parsing
 node app/race.test.mjs     # pack, rounding engine, board ingest, codec
+node app/share.test.mjs    # course share links: round trip, damage, refusal
 node app/wiring.test.mjs   # markup/script/style/service-worker wiring
 ```
 

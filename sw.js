@@ -5,7 +5,7 @@
 // fetch on the way to the first mark. So everything is precached on install and
 // served cache-first, with a background refresh when there is signal.
 
-const CACHE = 'nextmark-v4';
+const CACHE = 'nextmark-v5';
 
 const SHELL = [
   './',
@@ -22,6 +22,7 @@ const SHELL = [
   'app/chart.js',
   'app/coast.js',
   'app/ingest.js',
+  'app/share.js',
   'data/syc-offshore-2627.json',
   'data/coast-syc.json',
   'data/coast-world.json',
@@ -48,6 +49,26 @@ self.addEventListener('activate', e => {
   })());
 });
 
+/** How long to wait for the network before falling back to cache, for code. */
+const NET_TIMEOUT_MS = 2500;
+
+/**
+ * Two strategies, because "works offshore" and "a fix reaches the crew" pull in
+ * opposite directions.
+ *
+ *   App code (HTML, JS, CSS) — network-first with a short timeout. Eight phones
+ *   that installed this last week must pick up a fix the next time they open it
+ *   on signal, not a version later. Offshore the timeout expires in 2.5 s and
+ *   the cached copy is served, so nothing is lost.
+ *
+ *   Bulk data (the course pack, the coastlines, icons) — cache-first. It is
+ *   large, it almost never changes, and it is exactly what cannot be fetched on
+ *   the way to the first mark.
+ */
+function isAppCode(url) {
+  return /\.(?:html|js|css)$/.test(url.pathname) || url.pathname.endsWith('/');
+}
+
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -59,23 +80,34 @@ self.addEventListener('fetch', e => {
 
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    const hit = await cache.match(req, { ignoreSearch: true });
+    const cached = () => cache.match(req, { ignoreSearch: true });
 
-    const refresh = fetch(req).then(res => {
+    const fromNet = fetch(req).then(res => {
       if (res && res.ok && res.type === 'basic') cache.put(req, res.clone()).catch(() => {});
       return res;
     }).catch(() => null);
 
-    if (hit) return hit;                       // offline-first
-    const net = await refresh;
-    if (net) return net;
-
-    // Navigation with nothing cached and no network: hand back the app shell
-    // rather than a browser error page.
-    if (req.mode === 'navigate') {
-      const shell = await cache.match('race.html');
-      if (shell) return shell;
+    if (isAppCode(url) || req.mode === 'navigate') {
+      const raced = await Promise.race([
+        fromNet,
+        new Promise(r => setTimeout(() => r(null), NET_TIMEOUT_MS)),
+      ]);
+      if (raced) return raced;
+      const hit = await cached();
+      if (hit) return hit;
+      const late = await fromNet;
+      if (late) return late;
+      if (req.mode === 'navigate') {
+        const shell = await cache.match('race.html');
+        if (shell) return shell;
+      }
+    } else {
+      const hit = await cached();
+      if (hit) return hit;
+      const net = await fromNet;
+      if (net) return net;
     }
+
     return new Response('Offline and not cached.', {
       status: 503, headers: { 'content-type': 'text/plain' },
     });

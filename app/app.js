@@ -18,6 +18,7 @@ import {
   preparePhoto, blobToDataUrl, readBoard, toProposal, applyProposal, describeLegs,
   readerSettings, saveReaderSettings,
 } from './ingest.js';
+import { courseLink, decodeCourse, toSharedProposal, applySharedCourse } from './share.js';
 
 const el = id => document.getElementById(id);
 const PACK_URL = 'data/syc-offshore-2627.json';
@@ -44,6 +45,8 @@ const S = {
   photo: null,
   busy: false,
   lastSaveAt: 0,
+  crew: false,           // crew mode: follow the helm's course, don't run the start
+  incoming: null,        // a shared course waiting to be confirmed
 };
 
 // ---------------------------------------------------------------------------
@@ -65,11 +68,16 @@ async function boot() {
   loadWorld().then(w => { S.world = w; draw(); }).catch(() => {});
   loadPackCoast(S.pack.id, 'data/coast-syc.json').then(c => { S.packCoast = c; draw(); });
 
+  S.crew = await getSetting('crew', false);
+
   buildStaticUi();
   await recoverLiveRace();
   await refreshStorage();
   renderAll();
   wireEvents();
+
+  // A link from the group chat. Read it, but never apply it on arrival.
+  await handleIncomingLink();
 
   if (!(await available())) {
     warn('This browser is blocking on-device storage, so the track cannot be saved. ' +
@@ -613,6 +621,8 @@ function renderControls() {
     ? `⚓ Line pinned (${S.course.lineEnds.length}/2)` : '⚓ Pin line end';
   el('follow').textContent = S.follow ? 'Follow boat' : 'Whole course';
   el('zoomwrap').hidden = !S.follow;
+  el('btn-share').disabled = !S.course || !S.course.legs.length;
+  applyCrewGating();
 }
 
 // ---------------------------------------------------------------------------
@@ -948,6 +958,157 @@ function slug(s) {
   return 'nextmark-' + String(s || 'race').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+// ---------------------------------------------------------------------------
+// sharing a course to the crew
+// ---------------------------------------------------------------------------
+
+async function shareCourse() {
+  if (!S.course.legs.length) {
+    toast('Build the course first, then share it.');
+    showPanel('course');
+    return;
+  }
+  const name = (S.race && S.race.name) || defaultRaceName();
+  const link = courseLink(S.course, { name, crew: true });
+  const summary = describeLegs(S.course, S.course.legs);
+  const text = `${name}\n${summary}\n\nTap to load it into NextMark:\n${link}`;
+
+  // A long link gets mangled by some chat clients, so warn rather than let it
+  // fail silently on someone else's phone.
+  if (link.length > 1800) {
+    toast('That course makes a very long link — some chat apps will cut it. Consider fewer added marks.', 9000);
+  }
+
+  if (navigator.share) {
+    try { await navigator.share({ title: name, text }); return; } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Course link copied — paste it into the crew chat.', 7000);
+  } catch {
+    el('decltext').textContent = text;
+    el('declnote').textContent = 'Copy this and paste it into the crew chat.';
+    el('declnote').className = 'hint';
+    el('decl').hidden = false;
+  }
+}
+
+/** Read a ?#c=… course link, if the app was opened from one. */
+async function handleIncomingLink() {
+  const hash = location.hash || '';
+  if (!/[#&?]c=/.test(hash)) return;
+  const res = decodeCourse(hash);
+  // Clear the fragment either way so a reload does not re-prompt.
+  history.replaceState(null, '', location.pathname);
+
+  if (!res.ok) { warn(res.error); return; }
+  const prop = toSharedProposal(res.data, S.course);
+  S.incoming = prop;
+  renderIncoming(prop);
+}
+
+function renderIncoming(prop) {
+  const box = el('incoming');
+  box.replaceChildren();
+  box.hidden = false;
+
+  const h = document.createElement('div');
+  h.className = 'phead';
+  h.textContent = prop.problems.length && !prop.legs.length
+    ? 'That shared course could not be loaded'
+    : 'A course was shared with you';
+  box.append(h);
+
+  if (prop.name) {
+    const n = document.createElement('div');
+    n.className = 'rh';
+    n.textContent = prop.name;
+    box.append(n);
+  }
+  if (prop.legs.length) {
+    const s = document.createElement('div');
+    s.className = 'mono summary';
+    s.textContent = describeLegs(S.course, prop.legs);
+    box.append(s);
+    const extra = [];
+    if (prop.localMarks.length) extra.push(`${prop.localMarks.length} added mark(s)`);
+    if (prop.lineEnds.length) extra.push(`a pinned start line`);
+    if (prop.division) extra.push(prop.division === 'D1' ? 'Division 1' : prop.division === 'D2' ? 'Division 2' : prop.division);
+    if (extra.length) box.append(hint('Includes ' + extra.join(', ') + '.'));
+  }
+  for (const p of prop.problems) {
+    const d = document.createElement('div'); d.className = 'hint warn'; d.textContent = '⚠ ' + p;
+    box.append(d);
+  }
+
+  const row = document.createElement('div');
+  row.className = 'row end';
+  const dismiss = document.createElement('button');
+  dismiss.className = 'btn alt';
+  dismiss.textContent = 'Not now';
+  dismiss.onclick = () => { box.hidden = true; S.incoming = null; };
+  row.append(dismiss);
+
+  if (prop.legs.length) {
+    const load = document.createElement('button');
+    load.className = 'btn primary';
+    load.textContent = 'Load this course';
+    load.onclick = async () => {
+      if (S.race && S.race.status === 'live' && S.phase === 'racing' &&
+        !confirm('You are mid-race. Replace the course you are sailing?')) return;
+      applySharedCourse(S.course, prop);
+      if (prop.crew) await setCrew(true);
+      if (!S.race) await newRace(prop.name || undefined);
+      box.hidden = true;
+      S.incoming = null;
+      afterCourseEdit();
+      renderAll();
+      toast(`Loaded ${prop.legs.length} marks. Check them against the board before you start.`, 9000);
+    };
+    row.append(load);
+  }
+  box.append(row);
+}
+
+// ---------------------------------------------------------------------------
+// crew mode
+//
+// On a boat only one person runs the start. Crew mode follows the helm's
+// shared course and keeps its own track and its own numbers, but hides the
+// controls that would diverge the two: the start sequence, course editing and
+// the line pin.
+// ---------------------------------------------------------------------------
+
+async function setCrew(on) {
+  S.crew = !!on;
+  await setSetting('crew', S.crew);
+  renderAll();
+}
+
+function applyCrewGating() {
+  const crew = S.crew;
+  el('crewbar').hidden = !crew;
+  for (const id of ['btn-go', 'armlen', 'btn-armat', 'armat', 'btn-ping']) {
+    const node = el(id);
+    if (node) node.hidden = crew;
+  }
+  el('btn-crewstart').hidden = !crew || S.phase === 'racing';
+  el('btn-crewstop').hidden = !crew || S.phase !== 'racing';
+
+  // The shared course is read-only for crew, so eight phones cannot drift apart.
+  // Headings and labels go with their controls — an orphaned "Division" label
+  // over nothing just reads as a bug.
+  for (const id of ['palette', 'palettehead', 'builtlegs', 'courserow', 'coursehelp']) {
+    const node = el(id);
+    if (node) node.hidden = crew;
+  }
+  el('crewcoursenote').hidden = !crew;
+  el('newmarkblock').hidden = crew;
+  el('boardblock').hidden = crew;
+}
+
 // ---------- SI 20.8 declaration ----------
 
 function showDeclaration(ev) {
@@ -1150,6 +1311,7 @@ function useMyPosition() {
 
 async function renderSettings() {
   const s = await readerSettings();
+  el('set-crew').checked = S.crew;
   el('set-yacht').value = await getSetting('yacht', '');
   el('set-sail').value = await getSetting('sail', '');
   el('set-key').value = s.apiKey ? '••••••••' + s.apiKey.slice(-4) : '';
@@ -1355,6 +1517,21 @@ function wireEvents() {
     toast('New race started.');
   };
 
+  el('btn-share').onclick = shareCourse;
+
+  // Crew mode: no start sequence — one tap begins recording and arms the
+  // auto-advance. The helm times the start; the crew just need the numbers.
+  el('btn-crewstart').onclick = async () => {
+    if (!S.race) await newRace();
+    startRacing(Date.now());
+    if (!S.gps.on) startGps();
+    toast('Recording. Your track and roundings are yours alone.', 6000);
+  };
+  el('btn-crewstop').onclick = async () => {
+    if (confirm('Stop recording and save this race?')) await finishRace();
+  };
+  el('set-crew').onchange = e => setCrew(e.target.checked);
+
   el('decl-share').onclick = shareDeclaration;
   el('decl-close').onclick = () => { el('decl').hidden = true; };
 
@@ -1362,6 +1539,12 @@ function wireEvents() {
     t.onclick = () => showPanel(t.classList.contains('on') ? '' : t.dataset.tab);
   }
   el('warnbar').onclick = () => { el('warnbar').hidden = true; };
+
+  // Tapping a share link while the app is already open only changes the
+  // fragment — the browser does not reload, so boot() never re-runs. Without
+  // this, a crew member with the app open taps the helm's link and nothing
+  // happens at all.
+  window.addEventListener('hashchange', () => { handleIncomingLink(); });
 
   window.addEventListener('online', renderStatus);
   window.addEventListener('offline', renderStatus);
@@ -1372,4 +1555,10 @@ function wireEvents() {
   setInterval(() => { if (S.race) saveRace(); }, 5000);
 }
 
-boot();
+// A silent startup failure on a boat is the worst outcome — you find out at the
+// first mark. Surface it on screen instead.
+boot().catch(e => {
+  console.error('[nextmark] startup failed', e);
+  fatal('NextMark failed to start: ' + (e && e.message ? e.message : e) +
+    ' — reload, and if it persists reinstall from the link.');
+});

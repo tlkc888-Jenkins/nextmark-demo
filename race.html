@@ -15,6 +15,10 @@
 
 <div id="fatal" class="fatal" hidden></div>
 <div id="warnbar" class="warnbar" hidden></div>
+<div id="crewbar" class="crewbar" hidden>
+  CREW MODE — following the helm's course. Your track and roundings are your own.
+</div>
+<div id="incoming" class="incoming" hidden></div>
 
 <header class="top">
   <div class="tl">
@@ -82,6 +86,9 @@
     <button class="btn alt" id="btn-armat">Arm for</button>
     <select id="armat" aria-label="Start time"></select>
     <button class="btn alt" id="btn-ping">⚓ Pin line end</button>
+    <button class="btn primary big" id="btn-crewstart" hidden>▶ Start recording</button>
+    <button class="btn" id="btn-crewstop" hidden>Stop &amp; save</button>
+    <button class="btn alt" id="btn-share">↗ Share course to crew</button>
   </div>
 
   <div class="legs">
@@ -98,12 +105,12 @@
 
   <section class="panel" data-panel="course" hidden>
     <h2>Course</h2>
-    <p class="hint">
+    <p class="hint" id="coursehelp">
       Sunday offshore passage racing is course <b>X1</b> — a course set by the Race Committee and
       given at the Compulsory Skippers Briefing. Build it here from the board, in the order you sail it.
     </p>
 
-    <div class="row">
+    <div class="row" id="courserow">
       <label for="division">Division</label>
       <select id="division"></select>
       <label for="preset">Course</label>
@@ -111,48 +118,56 @@
       <button class="mini danger" id="btn-clearcourse">Clear</button>
     </div>
     <div id="divnote" class="hint"></div>
+    <div id="crewcoursenote" class="hint warn" hidden>
+      You are in crew mode, so this course is read-only — it comes from the helm's shared link.
+      Turn crew mode off in Settings if you need to build your own.
+    </div>
 
-    <h3>Briefing board</h3>
-    <div class="row">
-      <label class="filebtn">
-        📷 Photograph the board
-        <input type="file" id="photo" accept="image/*" capture="environment" hidden>
-      </label>
-      <button class="btn alt" id="btn-read" hidden>Read it into a course</button>
+    <div id="boardblock">
+      <h3>Briefing board</h3>
+      <div class="row">
+        <label class="filebtn">
+          📷 Photograph the board
+          <input type="file" id="photo" accept="image/*" capture="environment" hidden>
+        </label>
+        <button class="btn alt" id="btn-read" hidden>Read it into a course</button>
+      </div>
+      <div id="readnote" class="hint"></div>
+      <div id="photowrap" class="photowrap" hidden>
+        <img id="photoimg" alt="The briefing course board, as photographed">
+        <div id="photometa" class="hint"></div>
+      </div>
+      <div id="proposal" class="proposal" hidden></div>
     </div>
-    <div id="readnote" class="hint"></div>
-    <div id="photowrap" class="photowrap" hidden>
-      <img id="photoimg" alt="The briefing course board, as photographed">
-      <div id="photometa" class="hint"></div>
-    </div>
-    <div id="proposal" class="proposal" hidden></div>
 
     <!-- The palette comes first and never moves: at a briefing you tap it
          repeatedly, in order, and a list that reflows under your finger builds
          the wrong course. The course you are building is reviewed below it. -->
-    <h3>Tap marks in the order you sail them</h3>
+    <h3 id="palettehead">Tap marks in the order you sail them</h3>
     <div id="palette" class="palette"></div>
 
     <h3>The course</h3>
     <div id="builtsummary" class="mono summary"></div>
     <div id="builtlegs" class="builtlegs"></div>
 
-    <h3>New mark by coordinates</h3>
-    <p class="hint">
-      For a mark the RC adds over VHF. Accepts the format they read out
-      (<span class="mono">28 11.200 S</span>), decimal degrees, or both axes pasted into the first field.
-    </p>
-    <div class="row">
-      <input id="nm-id" class="inp short" placeholder="ID (e.g. M5)" autocapitalize="characters" maxlength="6">
-      <input id="nm-name" class="inp" placeholder="Name (optional)">
+    <div id="newmarkblock">
+      <h3>New mark by coordinates</h3>
+      <p class="hint">
+        For a mark the RC adds over VHF. Accepts the format they read out
+        (<span class="mono">28 11.200 S</span>), decimal degrees, or both axes pasted into the first field.
+      </p>
+      <div class="row">
+        <input id="nm-id" class="inp short" placeholder="ID (e.g. M5)" autocapitalize="characters" maxlength="6">
+        <input id="nm-name" class="inp" placeholder="Name (optional)">
+      </div>
+      <div class="row">
+        <input id="nm-lat" class="inp" placeholder="28 11.200 S  — or paste both" inputmode="text">
+        <input id="nm-lon" class="inp" placeholder="153 34.300 E" inputmode="text">
+        <button class="btn alt" id="btn-herepos">Use my position</button>
+        <button class="btn primary" id="btn-addmark">Add mark</button>
+      </div>
+      <div id="nm-note" class="hint"></div>
     </div>
-    <div class="row">
-      <input id="nm-lat" class="inp" placeholder="28 11.200 S  — or paste both" inputmode="text">
-      <input id="nm-lon" class="inp" placeholder="153 34.300 E" inputmode="text">
-      <button class="btn alt" id="btn-herepos">Use my position</button>
-      <button class="btn primary" id="btn-addmark">Add mark</button>
-    </div>
-    <div id="nm-note" class="hint"></div>
   </section>
 
   <section class="panel" data-panel="races" hidden>
@@ -172,6 +187,16 @@
 
   <section class="panel" data-panel="settings" hidden>
     <h2>Settings</h2>
+
+    <h3>Crew mode</h3>
+    <p class="hint">
+      On a boat only one person runs the start. Crew mode follows the course the helm
+      shared, and hides the start sequence, the line pin and course editing so eight
+      phones cannot drift apart. Your own track, numbers and roundings are unaffected.
+    </p>
+    <div class="row">
+      <label class="switch"><input type="checkbox" id="set-crew"> I'm crew, not running the start</label>
+    </div>
 
     <h3>Your boat</h3>
     <p class="hint">Used on the race card and in the SI 20.8 rounding declaration.</p>
