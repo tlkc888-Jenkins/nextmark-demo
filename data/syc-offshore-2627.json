@@ -1,0 +1,655 @@
+{
+ "id": "syc-offshore-2627",
+ "name": "SYC Offshore Division 2026/27",
+ "club": "Southport Yacht Club",
+ "club_url": "https://southportyachtclub.com.au/offshore/",
+ "country": "Australia",
+ "state": "QLD",
+ "datum": "WGS84",
+ "source": {
+  "title": "Sailing Instructions 2026-2027 Offshore Division (incl. Amendment 1)",
+  "url": "https://southportyachtclub.com.au/wp-content/uploads/2026/08/OD-26-27-Sailing-Instructions-Including-Amendment-1-final.pdf",
+  "authority": "Southport Yacht Club Inc.",
+  "rrs": "Racing Rules of Sailing 2025-2028",
+  "category": "AS SR Part 1 Offshore, Category 4"
+ },
+ "divisions": [
+  {
+   "id": "D1",
+   "name": "Division 1",
+   "flag": "Numeral Pennant 1",
+   "scoring": "ORC Club, IRC, PHS",
+   "windward_mark": "1"
+  },
+  {
+   "id": "D2",
+   "name": "Division 2",
+   "flag": "Numeral Pennant 2",
+   "scoring": "ORC Club, IRC, PHS",
+   "windward_mark": "1",
+   "note": "RC may designate Mark 1a as the windward mark for Division 2 in place of Mark 1."
+  },
+  {
+   "id": "IRC",
+   "name": "IRC Super Series",
+   "flag": "Numeral Pennant 3",
+   "scoring": "IRC",
+   "windward_mark": "1"
+  }
+ ],
+ "rules": {
+  "default_rounding": "P",
+  "default_rounding_si": "SI 10.2 - all marks to be rounded to Port unless stated (S).",
+  "off_station_m": 200,
+  "off_station_si": "SI 10.3 - if a mark is missing or has shifted more than 200 m from its GPS position, round the position using the SI coordinates.",
+  "quadrant_si": "SI 10.7 - a valid GPS fix within the mark's 90 degree rounding quadrant is deemed to have rounded or passed the mark on the correct side.",
+  "declaration_si": "SI 20.8 - when advised at the briefing, within 15 minutes of rounding or passing a Waypoint Mark, notify the Race Officer by text/MMS with the yacht's name AND a photograph of an instrument displaying the fix and time of the rounding within the rounding quadrant.",
+  "declaration_window_min": 15,
+  "start_si": "SI 12.1 - RRS 26, warning signal 5 minutes before the starting signal.",
+  "warning_signal_sec": 300,
+  "vhf_race": "09",
+  "vhf_seaway": "73",
+  "briefing": {
+   "summer": "09:00",
+   "winter": "10:00",
+   "start_not_before": {
+    "summer": "11:00",
+    "winter": "12:00"
+   }
+  },
+  "time_limits": {
+   "Short Passage": {
+    "mark1_min": 45,
+    "race_h": 4,
+    "window_min": 45
+   },
+   "Passage": {
+    "mark1_min": 150,
+    "race_h": 6,
+    "window_min": 120
+   },
+   "W/L": {
+    "mark1_min": 45,
+    "race_h": 2,
+    "window_min": 45
+   }
+  }
+ },
+ "marks": [
+  {
+   "id": "SF",
+   "name": "Offshore Start/Finish",
+   "kind": "line",
+   "si_lat": "27 56.400 S",
+   "si_lon": "153 27.230 E",
+   "lat": -27.94,
+   "lon": 153.453833,
+   "note": "Approx. 1 NM south of the Sand Pump Jetty. Line position is confirmed at the Compulsory Skippers Briefing and may differ from the SI diagram (SI 12.3)."
+  },
+  {
+   "id": "A",
+   "name": "Surfers Mark",
+   "kind": "course",
+   "si_lat": "28 00.135 S",
+   "si_lon": "153 26.800 E",
+   "lat": -28.00225,
+   "lon": 153.446667,
+   "quadrants": [
+    {
+     "dir": "S",
+     "b1": 180,
+     "b2": 270,
+     "si": "180 and 270 when heading in a Southerly direction"
+    },
+    {
+     "dir": "N",
+     "b1": 0,
+     "b2": 270,
+     "si": "0 and 270 when heading in a Northerly direction"
+    }
+   ]
+  },
+  {
+   "id": "B",
+   "name": "Burleigh Mark",
+   "kind": "course",
+   "si_lat": "28 05.100 S",
+   "si_lon": "153 27.800 E",
+   "lat": -28.085,
+   "lon": 153.463333,
+   "quadrants": [
+    {
+     "dir": "S",
+     "b1": 180,
+     "b2": 270,
+     "si": "180 and 270 when heading in a Southerly direction"
+    },
+    {
+     "dir": "N",
+     "b1": 0,
+     "b2": 270,
+     "si": "0 and 270 when heading in a Northerly direction"
+    }
+   ]
+  },
+  {
+   "id": "C",
+   "name": "Currumbin Mark",
+   "kind": "course",
+   "si_lat": "28 07.300 S",
+   "si_lon": "153 29.500 E",
+   "lat": -28.121667,
+   "lon": 153.491667,
+   "quadrants": [
+    {
+     "dir": "S",
+     "b1": 180,
+     "b2": 270,
+     "si": "180 and 270 when heading in a Southerly direction"
+    },
+    {
+     "dir": "N",
+     "b1": 0,
+     "b2": 270,
+     "si": "0 and 270 when heading in a Northerly direction"
+    }
+   ]
+  },
+  {
+   "id": "D",
+   "name": "Cook Island Mark",
+   "kind": "course",
+   "si_lat": "28 11.200 S",
+   "si_lon": "153 34.300 E",
+   "lat": -28.186667,
+   "lon": 153.571667,
+   "quadrants": [
+    {
+     "dir": "*",
+     "b1": 180,
+     "b2": 270,
+     "si": "180 and 270"
+    }
+   ]
+  },
+  {
+   "id": "E",
+   "name": "Laid Mark",
+   "kind": "laid",
+   "lat": null,
+   "lon": null,
+   "note": "Position as described at the Compulsory Skippers Briefing."
+  },
+  {
+   "id": "F1",
+   "name": "Offshore FAD1",
+   "kind": "course",
+   "si_lat": "27 59.33 S",
+   "si_lon": "153 31.75 E",
+   "lat": -27.988833,
+   "lon": 153.529167
+  },
+  {
+   "id": "M",
+   "name": "Mermaid Mark",
+   "kind": "course",
+   "si_lat": "28 2.596 S",
+   "si_lon": "153 27.293 E",
+   "lat": -28.043267,
+   "lon": 153.454883
+  },
+  {
+   "id": "MSW",
+   "name": "Mermaid Seaward Mark",
+   "kind": "course",
+   "si_lat": "28 2.593 S",
+   "si_lon": "153 29.504 E",
+   "lat": -28.043217,
+   "lon": 153.491733
+  },
+  {
+   "id": "N",
+   "name": "Northern Mark",
+   "kind": "course",
+   "si_lat": "27 53.560 S",
+   "si_lon": "153 28.610 E",
+   "lat": -27.892667,
+   "lon": 153.476833,
+   "quadrants": [
+    {
+     "dir": "*",
+     "b1": 180,
+     "b2": 270,
+     "si": "180 and 270"
+    }
+   ]
+  },
+  {
+   "id": "S",
+   "name": "Snapper Mark",
+   "kind": "course",
+   "si_lat": "28 09.330 S",
+   "si_lon": "153 33.000 E",
+   "lat": -28.1555,
+   "lon": 153.55,
+   "quadrants": [
+    {
+     "dir": "*",
+     "b1": 180,
+     "b2": 270,
+     "si": "180 and 270"
+    }
+   ]
+  },
+  {
+   "id": "SW",
+   "name": "Seaward Mark",
+   "kind": "course",
+   "si_lat": "27 57.805 S",
+   "si_lon": "153 28.536 E",
+   "lat": -27.963417,
+   "lon": 153.4756,
+   "quadrants": [
+    {
+     "dir": "*",
+     "b1": 180,
+     "b2": 270,
+     "si": "180 and 270"
+    }
+   ]
+  },
+  {
+   "id": "X",
+   "name": "Laid Clearance Buoy",
+   "kind": "laid",
+   "lat": null,
+   "lon": null,
+   "note": "If used: approx. 0.8 NM to windward of the start line."
+  }
+ ],
+ "relative_marks": [
+  {
+   "id": "1",
+   "name": "Mark 1 (windward)",
+   "rel": "windward",
+   "note": "Laid to windward of the start line."
+  },
+  {
+   "id": "1a",
+   "name": "Mark 1a (windward, Div 2)",
+   "rel": "windward",
+   "note": "The RC may designate 1a as the windward mark for Division 2 in place of Mark 1 (advised at the briefing and/or on the course board)."
+  },
+  {
+   "id": "2",
+   "name": "Mark 2 (reaching)",
+   "rel": "reach",
+   "note": "Triangle reaching mark."
+  },
+  {
+   "id": "3p",
+   "name": "Gate 3p",
+   "rel": "leeward",
+   "note": "Leeward gate, port-hand mark."
+  },
+  {
+   "id": "3s",
+   "name": "Gate 3s",
+   "rel": "leeward",
+   "note": "Leeward gate, starboard-hand mark."
+  }
+ ],
+ "courses": [
+  {
+   "id": "X1",
+   "name": "RC-set passage course",
+   "type": "PASSAGE",
+   "builder": true,
+   "si": "A course set by the Race Committee as advised at the Compulsory Skippers Briefing.",
+   "seq": []
+  },
+  {
+   "id": "W1",
+   "name": "START - 1 - FINISH",
+   "type": "W/L",
+   "seq": [
+    [
+     "1",
+     "P"
+    ]
+   ]
+  },
+  {
+   "id": "W2",
+   "name": "START - 1 - 3s/3p - 1 - FINISH",
+   "type": "W/L",
+   "seq": [
+    [
+     "1",
+     "P"
+    ],
+    [
+     "3s|3p",
+     "G"
+    ],
+    [
+     "1",
+     "P"
+    ]
+   ]
+  },
+  {
+   "id": "W3",
+   "name": "START - 1 - 3s/3p - 1 - 3s/3p - 1 - FINISH",
+   "type": "W/L",
+   "seq": [
+    [
+     "1",
+     "P"
+    ],
+    [
+     "3s|3p",
+     "G"
+    ],
+    [
+     "1",
+     "P"
+    ],
+    [
+     "3s|3p",
+     "G"
+    ],
+    [
+     "1",
+     "P"
+    ]
+   ]
+  },
+  {
+   "id": "T1",
+   "name": "START - 1 - 2 - FINISH",
+   "type": "W/L",
+   "seq": [
+    [
+     "1",
+     "P"
+    ],
+    [
+     "2",
+     "P"
+    ]
+   ]
+  },
+  {
+   "id": "TL2",
+   "name": "START - 1 - 2 - 3p - 1 - FINISH",
+   "type": "W/L",
+   "seq": [
+    [
+     "1",
+     "P"
+    ],
+    [
+     "2",
+     "P"
+    ],
+    [
+     "3p",
+     "P"
+    ],
+    [
+     "1",
+     "P"
+    ]
+   ]
+  },
+  {
+   "id": "TL3",
+   "name": "START - 1 - 2 - 3p - 1 - 3p/3s - 1 - 2 - FINISH",
+   "type": "W/L",
+   "seq": [
+    [
+     "1",
+     "P"
+    ],
+    [
+     "2",
+     "P"
+    ],
+    [
+     "3p",
+     "P"
+    ],
+    [
+     "1",
+     "P"
+    ],
+    [
+     "3p|3s",
+     "G"
+    ],
+    [
+     "1",
+     "P"
+    ],
+    [
+     "2",
+     "P"
+    ]
+   ]
+  }
+ ],
+ "zones": [
+  {
+   "id": "wonder-reef",
+   "name": "Wonder Reef",
+   "type": "prohibited",
+   "si": "SI 11.3 - continuing obstruction and prohibited area. A boat shall not sail in.",
+   "poly": [
+    -27.95755,
+    153.45313333333334,
+    -27.95765,
+    153.4572,
+    -27.962366666666668,
+    153.45718333333335,
+    -27.962483333333335,
+    153.45311666666666
+   ]
+  },
+  {
+   "id": "brisbane-wave-buoy",
+   "name": "Brisbane wave buoy",
+   "type": "exclusion",
+   "si": "SI 11.4 - enforceable 100 m exclusion zone. A boat shall not sail in.",
+   "lat": -27.487167,
+   "lon": 153.631667,
+   "radius_m": 100
+  },
+  {
+   "id": "gold-coast-wave-buoy",
+   "name": "Gold Coast wave buoy",
+   "type": "exclusion",
+   "si": "SI 11.4 - enforceable 100 m exclusion zone. A boat shall not sail in.",
+   "lat": -27.965233,
+   "lon": 153.442583,
+   "radius_m": 100
+  },
+  {
+   "id": "palm-beach-wave-buoy",
+   "name": "Palm Beach wave buoy",
+   "type": "exclusion",
+   "si": "SI 11.4 - enforceable 100 m exclusion zone. A boat shall not sail in.",
+   "lat": -28.099267,
+   "lon": 153.48455,
+   "radius_m": 100
+  },
+  {
+   "id": "bilinga-wave-buoy",
+   "name": "Bilinga wave buoy",
+   "type": "exclusion",
+   "si": "SI 11.4 - enforceable 100 m exclusion zone. A boat shall not sail in.",
+   "lat": -28.143017,
+   "lon": 153.510767,
+   "radius_m": 100
+  }
+ ],
+ "finish_options": [
+  {
+   "id": "15.1.1",
+   "desc": "Blue flag on the finishing boat (eastern end) to the finishing mark (western end)."
+  },
+  {
+   "id": "15.1.2",
+   "desc": "End of the Sand Pumping Jetty to the finishing mark."
+  },
+  {
+   "id": "15.1.3",
+   "desc": "End of the Sand Pumping Jetty to a blue flag on the finishing boat."
+  },
+  {
+   "id": "15.1.4",
+   "desc": "Imaginary line from the eastern end of the Sand Pumping Jetty to 27 56.315 S 153 26.500 E.",
+   "lat": -27.938583,
+   "lon": 153.441667
+  }
+ ],
+ "schedule": [
+  {
+   "date": "2026-05-17",
+   "name": "Winter Passage - Day 1/6",
+   "type": "PASSAGE"
+  },
+  {
+   "date": "2026-05-31",
+   "name": "Winter W/L | Short Passage - Day 1/2 | IRC Super Series Day 1/6",
+   "type": "W/L"
+  },
+  {
+   "date": "2026-06-21",
+   "name": "Winter Passage - Day 2/6",
+   "type": "PASSAGE"
+  },
+  {
+   "date": "2026-07-05",
+   "name": "Winter Passage - Day 3/6 (POSTPONED)",
+   "type": "PASSAGE"
+  },
+  {
+   "date": "2026-07-19",
+   "name": "Winter W/L | Short Passage - Day 2/2 | IRC Super Series Day 2/6",
+   "type": "W/L"
+  },
+  {
+   "date": "2026-08-30",
+   "name": "Winter Passage - Day 4/6",
+   "type": "PASSAGE"
+  },
+  {
+   "date": "2026-09-13",
+   "name": "Winter Passage - Day 3/6 (RESCHEDULED)",
+   "type": "PASSAGE"
+  },
+  {
+   "date": "2026-09-27",
+   "name": "Summer Passage - Day 1/5",
+   "type": "PASSAGE"
+  },
+  {
+   "date": "2026-10-18",
+   "name": "Summer W/L | Short Passage - Day 1/4 | IRC Super Series Day 3/6",
+   "type": "W/L"
+  },
+  {
+   "date": "2026-11-15",
+   "name": "Summer Passage - Day 2/5",
+   "type": "PASSAGE"
+  },
+  {
+   "date": "2026-11-29",
+   "name": "Summer W/L | Short Passage - Day 2/4 | IRC Super Series Day 4/6",
+   "type": "W/L"
+  },
+  {
+   "date": "2026-12-13",
+   "name": "Summer Passage - Day 3/5",
+   "type": "PASSAGE"
+  },
+  {
+   "date": "2027-01-10",
+   "name": "Summer Passage - Day 4/5",
+   "type": "PASSAGE"
+  },
+  {
+   "date": "2027-02-14",
+   "name": "Summer Passage - Day 5/5",
+   "type": "PASSAGE"
+  },
+  {
+   "date": "2027-02-28",
+   "name": "Summer W/L | Short Passage - Day 3/4 | IRC Super Series Day 5/6",
+   "type": "W/L"
+  },
+  {
+   "date": "2027-04-04",
+   "name": "Summer W/L | Short Passage - Day 4/4 | IRC Super Series Day 6/6",
+   "type": "W/L"
+  },
+  {
+   "date": "2027-04-18",
+   "name": "Summer spare race day",
+   "type": "PASSAGE"
+  }
+ ],
+ "events": [
+  {
+   "from": "2026-10-03",
+   "to": "2026-10-05",
+   "name": "The Yacht Sales Co. Sail Paradise Regatta"
+  },
+  {
+   "from": "2026-11-01",
+   "to": "2026-11-01",
+   "name": "Cook Island Yacht Race"
+  },
+  {
+   "from": "2026-12-26",
+   "to": "2026-12-31",
+   "name": "Sydney Hobart Yacht Race"
+  },
+  {
+   "from": "2027-01-23",
+   "to": "2027-01-24",
+   "name": "Ted Elkes Memorial Regatta"
+  },
+  {
+   "from": "2027-02-06",
+   "to": "2027-02-06",
+   "name": "Surf to City"
+  },
+  {
+   "from": "2027-03-13",
+   "to": "2027-03-13",
+   "name": "Julian Rocks Yacht Race"
+  },
+  {
+   "from": "2027-03-20",
+   "to": "2027-03-20",
+   "name": "Ladies Day Race"
+  },
+  {
+   "from": "2027-03-21",
+   "to": "2027-03-21",
+   "name": "DUX Birthday Celebrations"
+  },
+  {
+   "from": "2027-03-26",
+   "to": "2027-03-29",
+   "name": "Brisbane to Gladstone Yacht Race"
+  },
+  {
+   "from": "2027-04-24",
+   "to": "2027-04-24",
+   "name": "Burleigh Bash"
+  }
+ ]
+}

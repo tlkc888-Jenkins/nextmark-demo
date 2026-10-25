@@ -1,0 +1,118 @@
+# NextMark
+
+An offshore race pilot that works with no signal. Build the day's course at the
+briefing, then sail it with rounding that follows the sailing instructions.
+
+- `race.html` — the app
+- `index.html` — the original concept demo (kept as-is)
+
+## Why it is built this way
+
+Sunday offshore passage racing at Southport is **course X1**: *"a course set by
+the Race Committee as advised at the Compulsory Skippers Briefing."* There is no
+pre-published course to download. So the app's primary surface is a course
+builder you drive from the board at 09:00, and everything else serves that.
+
+Three clauses of the SIs shape the design:
+
+| SI | What it says | What the app does |
+|---|---|---|
+| 10.2 | All marks to port unless stated (S) | Port is the default when you tap a mark |
+| 10.3 | A mark missing or >200 m off station is rounded at its published coordinates | Positions always come from the SIs, never from a sighting; an off-station check is built in |
+| 10.7 | A valid GPS fix inside a mark's 90° quadrant is deemed to have rounded it | Auto-advance is a quadrant test, not a proximity radius — so it is rule-correct, not just convenient |
+| 20.8 | Within 15 min of rounding, text the RO the yacht name and a photo of an instrument showing the fix and time inside the quadrant | Generates exactly that card, ready to share |
+
+## On the water
+
+Nothing but an explicit **New race** discards a track. Changing the wind,
+editing the course, or switching division never touches recorded fixes.
+
+- **Start sequence** runs on the wall clock, not frame timing, so a locked screen
+  or a backgrounded tab cannot make it drift.
+- **Screen wake lock** is held while racing and re-acquired every time the app
+  returns to the foreground.
+- **A missed rounding is always recoverable** — *Next mark* advances by hand and
+  records that it was manual, so the declaration never claims a quadrant fix it
+  did not get.
+- **A mark added over VHF** is typed in as coordinates, in the format the RC
+  reads out (`28 11.200 S`), as decimal degrees, or pasted whole.
+
+### The limit worth knowing
+
+**No web app on iOS can record GPS while the screen is locked or the app is
+backgrounded.** There is no background geolocation for web on iOS, and Android
+throttles it. That is why the app holds the screen awake. If recording does
+stop, the track resumes with a visible **gap** — never a straight line across
+water the boat did not sail.
+
+## Storage
+
+Everything stays on the device that recorded it. Nothing is uploaded.
+
+A fix is 20 bytes — lat/lon as scaled int32 (1.1 cm), ms offset, SOG, COG,
+accuracy, flags. At 1 Hz that is **72 KB/hour**, so the 6-hour passage race time
+limit is about **430 KB** and the full 17-day Offshore season is single-digit
+megabytes. Fixes append into 512-fix chunks, flushed every 5 s, so a hard kill
+costs seconds rather than the race.
+
+On iOS, add the app to the Home Screen — Safari evicts storage for sites that
+are merely bookmarked.
+
+## Reading the briefing board
+
+Optional, and never required. Photograph the board and it is kept on the device
+so it can be zoomed on deck with no signal. If an API key is set in Settings,
+the photo can also be read into a course — returned against a fixed schema as
+marks and sides, not prose, with coordinates re-parsed locally and the result
+shown as a **proposal you confirm** before it reaches the chart.
+
+The key is stored on the device and sent straight to the API. Browser access to
+the API is an explicit opt-in that exposes the key to the page, which is
+acceptable for your own phone and your own key and not for distribution — set a
+proxy URL instead when this goes to other boats.
+
+## Charts anywhere
+
+Two coastline layers, so the chart is never blank wherever the marks are:
+
+- `data/coast-world.json` — Natural Earth 10m, simplified to 400 m and tiled at
+  10°, ~1 MB for the planet, cached once by the service worker.
+- `data/coast-syc.json` — OpenStreetMap at ~25 m, clipped to the race area.
+  Drawn in preference wherever it covers the view.
+
+Neither is for navigation.
+
+## Build
+
+The data files are committed; rebuild them only when a source changes.
+
+```sh
+cd tools
+curl -L -o ne10m.geojson \
+  https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_coastline.geojson
+python build_coast.py 400                       # -> coast-world.json
+curl -A "NextMark coastline-build" -X POST https://overpass-api.de/api/interpreter \
+  --data-urlencode 'data=[out:json][timeout:90];way["natural"="coastline"](-28.32,153.28,-27.78,153.68);(._;>;);out body;' \
+  -o osm_gc.json
+python build_pack_coast.py osm_gc.json coast-syc.json 25
+python build_pack_syc.py                        # -> syc-offshore-2627.json
+```
+
+`build_pack_syc.py` holds every mark transcribed verbatim from Attachment B of
+the SIs as degrees-and-decimal-minutes; the decimal degrees the app uses are
+derived there, so no conversion is done by hand.
+
+## Tests
+
+```sh
+node app/geo.test.mjs      # geometry, quadrants, coordinate parsing
+node app/race.test.mjs     # pack, rounding engine, board ingest, codec
+node app/wiring.test.mjs   # markup/script/style/service-worker wiring
+```
+
+## Source
+
+Sailing Instructions 2026–2027 Offshore Division (incl. Amendment 1),
+Southport Yacht Club Inc. — <https://southportyachtclub.com.au/offshore/>
+
+Not for navigation.

@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#07131C">
+<title>NextMark — race pilot</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="app/app.css">
+</head>
+<body>
+
+<div id="fatal" class="fatal" hidden></div>
+<div id="warnbar" class="warnbar" hidden></div>
+
+<header class="top">
+  <div class="tl">
+    <div id="racename" class="rname">No race started</div>
+    <div class="tmeta">
+      <span id="packname"></span>
+      <span id="vhf"></span>
+    </div>
+  </div>
+  <div class="tr">
+    <span id="clock" class="clock">T --:--:--</span>
+    <button class="btn alt" id="btn-newrace">New race</button>
+  </div>
+</header>
+
+<div class="statusrow">
+  <span id="gpsstat" class="stat off">GPS off</span>
+  <span id="wakestat" class="stat off">screen may sleep</span>
+  <span id="netstat" class="stat ok">online</span>
+</div>
+
+<div id="cdstrip" class="cdstrip" hidden>
+  <div class="stage" id="cdstage">WARNING</div>
+  <div class="digits" id="cddig">5:00</div>
+  <button class="btn alt" id="btn-gun">Gun now</button>
+</div>
+
+<main class="race">
+
+  <div class="nextbar">
+    <div class="nbtext">
+      <div class="nblabel">Next mark</div>
+      <div id="nextmark" class="nbname">—</div>
+    </div>
+    <span id="sidebadge" class="side N">—</span>
+  </div>
+
+  <div class="tiles">
+    <div class="tile hot"><div class="k">BRG to mark</div><div class="v"><span id="brg">—</span><span class="u">°T</span></div></div>
+    <div class="tile hot"><div class="k">DTM</div><div class="v"><span id="dtm">—</span><span class="u">nm</span></div></div>
+    <div class="tile"><div class="k">TTM</div><div class="v"><span id="ttm">—</span><span class="u" id="ttm-unit"></span></div></div>
+    <div class="tile"><div class="k">SOG</div><div class="v"><span id="sog">—</span><span class="u">kn</span></div></div>
+    <div class="tile"><div class="k">COG</div><div class="v"><span id="cog">—</span><span class="u">°T</span></div></div>
+    <div class="tile" id="vmctile"><div class="k">VMC</div><div class="v"><span id="vmc">—</span><span class="u">kn</span></div></div>
+  </div>
+  <div id="offline-note" class="hint">Start GPS to see live numbers. The course and chart work without it.</div>
+
+  <div class="markrow">
+    <button class="btn big" id="btn-prev">◀ Back a mark</button>
+    <button class="btn big" id="btn-next">Next mark ▶</button>
+  </div>
+
+  <div id="chartwrap" class="chartwrap">
+    <svg id="chart" aria-label="Race chart"></svg>
+    <div class="chartctl">
+      <button class="mini" id="follow">Whole course</button>
+      <span id="zoomwrap" hidden><input type="range" id="zoom" min="0.5" max="12" step="0.5" value="3" aria-label="Zoom, nautical miles across"></span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn primary big" id="btn-gps">📍 Start GPS</button>
+    <button class="btn primary big" id="btn-go">Arm start</button>
+    <select id="armlen" aria-label="Start sequence length"></select>
+    <button class="btn alt" id="btn-armat">Arm for</button>
+    <select id="armat" aria-label="Start time"></select>
+    <button class="btn alt" id="btn-ping">⚓ Pin line end</button>
+  </div>
+
+  <div class="legs">
+    <div class="legshead">
+      <span class="k">Course — auto-advances on a valid quadrant fix</span>
+      <span id="coursemeta" class="mono"></span>
+    </div>
+    <div id="leglist"></div>
+  </div>
+
+</main>
+
+<div id="panelwrap" class="panelwrap" hidden>
+
+  <section class="panel" data-panel="course" hidden>
+    <h2>Course</h2>
+    <p class="hint">
+      Sunday offshore passage racing is course <b>X1</b> — a course set by the Race Committee and
+      given at the Compulsory Skippers Briefing. Build it here from the board, in the order you sail it.
+    </p>
+
+    <div class="row">
+      <label for="division">Division</label>
+      <select id="division"></select>
+      <label for="preset">Course</label>
+      <select id="preset"></select>
+      <button class="mini danger" id="btn-clearcourse">Clear</button>
+    </div>
+    <div id="divnote" class="hint"></div>
+
+    <h3>Briefing board</h3>
+    <div class="row">
+      <label class="filebtn">
+        📷 Photograph the board
+        <input type="file" id="photo" accept="image/*" capture="environment" hidden>
+      </label>
+      <button class="btn alt" id="btn-read" hidden>Read it into a course</button>
+    </div>
+    <div id="readnote" class="hint"></div>
+    <div id="photowrap" class="photowrap" hidden>
+      <img id="photoimg" alt="The briefing course board, as photographed">
+      <div id="photometa" class="hint"></div>
+    </div>
+    <div id="proposal" class="proposal" hidden></div>
+
+    <!-- The palette comes first and never moves: at a briefing you tap it
+         repeatedly, in order, and a list that reflows under your finger builds
+         the wrong course. The course you are building is reviewed below it. -->
+    <h3>Tap marks in the order you sail them</h3>
+    <div id="palette" class="palette"></div>
+
+    <h3>The course</h3>
+    <div id="builtsummary" class="mono summary"></div>
+    <div id="builtlegs" class="builtlegs"></div>
+
+    <h3>New mark by coordinates</h3>
+    <p class="hint">
+      For a mark the RC adds over VHF. Accepts the format they read out
+      (<span class="mono">28 11.200 S</span>), decimal degrees, or both axes pasted into the first field.
+    </p>
+    <div class="row">
+      <input id="nm-id" class="inp short" placeholder="ID (e.g. M5)" autocapitalize="characters" maxlength="6">
+      <input id="nm-name" class="inp" placeholder="Name (optional)">
+    </div>
+    <div class="row">
+      <input id="nm-lat" class="inp" placeholder="28 11.200 S  — or paste both" inputmode="text">
+      <input id="nm-lon" class="inp" placeholder="153 34.300 E" inputmode="text">
+      <button class="btn alt" id="btn-herepos">Use my position</button>
+      <button class="btn primary" id="btn-addmark">Add mark</button>
+    </div>
+    <div id="nm-note" class="hint"></div>
+  </section>
+
+  <section class="panel" data-panel="races" hidden>
+    <h2>Races on this device</h2>
+    <p class="hint">
+      Every race is recorded here and nowhere else. Share one to the crew chat, or delete it.
+    </p>
+    <div id="racelist" class="racelist"></div>
+    <h3>Storage</h3>
+    <div id="storagestat" class="hint mono"></div>
+  </section>
+
+  <section class="panel" data-panel="directory" hidden>
+    <h2>Club &amp; races</h2>
+    <div id="dirlist" class="dirlist"></div>
+  </section>
+
+  <section class="panel" data-panel="settings" hidden>
+    <h2>Settings</h2>
+
+    <h3>Your boat</h3>
+    <p class="hint">Used on the race card and in the SI 20.8 rounding declaration.</p>
+    <div class="row">
+      <input id="set-yacht" class="inp" placeholder="Yacht name">
+      <input id="set-sail" class="inp short" placeholder="Sail no.">
+    </div>
+
+    <h3>Wind direction</h3>
+    <p class="hint">
+      Optional, and only used to place the laid clearance buoy upwind of the start line.
+      Your instruments are the real source — changing this never touches your track.
+    </p>
+    <div class="row">
+      <input id="set-wind" class="inp short" inputmode="numeric" placeholder="e.g. 120">
+      <span class="hint">degrees the wind is from</span>
+    </div>
+
+    <h3>Reading the board automatically</h3>
+    <p class="hint">
+      Optional. The key is stored on this device only and is sent straight to the API — never to us.
+      Leave it empty and build the course by hand; everything else works the same.
+    </p>
+    <div class="row">
+      <input id="set-key" class="inp" placeholder="API key (stays on this device)" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="row">
+      <input id="set-proxy" class="inp" placeholder="Proxy URL (optional — use if the browser blocks the direct call)" autocomplete="off" spellcheck="false">
+      <input id="set-model" class="inp short" placeholder="model" autocomplete="off" spellcheck="false">
+    </div>
+
+    <h3>Storage</h3>
+    <div id="persistnote" class="hint"></div>
+    <div class="row">
+      <button class="btn alt" id="btn-persist">Keep my races permanently</button>
+      <button class="btn primary" id="btn-savesettings">Save settings</button>
+    </div>
+
+    <h3>What this app is not</h3>
+    <p class="hint">
+      Not for navigation. Mark positions are the published SI coordinates and the coastline is a
+      generalised outline — use your chartplotter and your eyes. GPS recording stops whenever the
+      screen locks or the app is backgrounded, which is why the app holds the screen awake while
+      racing; any gap in recording is drawn as a gap, never bridged with a straight line.
+    </p>
+  </section>
+
+</div>
+
+<nav class="tabs">
+  <button class="tab" data-tab="course">Course</button>
+  <button class="tab" data-tab="races">Races</button>
+  <button class="tab" data-tab="directory">Club</button>
+  <button class="tab" data-tab="settings">Settings</button>
+</nav>
+
+<div id="decl" class="modal" hidden>
+  <div class="mbox">
+    <h2>Rounding declaration</h2>
+    <pre id="decltext" class="decl"></pre>
+    <div id="declnote" class="hint"></div>
+    <div class="row end">
+      <button class="btn alt" id="decl-close">Close</button>
+      <button class="btn primary" id="decl-share">Send to Race Officer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script type="module" src="app/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
