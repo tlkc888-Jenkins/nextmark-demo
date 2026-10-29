@@ -5,7 +5,7 @@
 // fetch on the way to the first mark. So everything is precached on install and
 // served cache-first, with a background refresh when there is signal.
 
-const CACHE = 'nextmark-v6';
+const CACHE = 'nextmark-v7';
 
 const SHELL = [
   './',

@@ -44,6 +44,7 @@
   <div class="stage" id="cdstage">WARNING</div>
   <div class="digits" id="cddig">5:00</div>
   <button class="btn alt" id="btn-gun">Gun now</button>
+  <div class="cdline" id="cdline" hidden></div>
 </div>
 
 <main class="race">
@@ -201,6 +202,10 @@
     <div class="row">
       <label class="switch"><input type="checkbox" id="set-crew"> I'm crew, not running the start</label>
     </div>
+    <div class="row">
+      <button class="btn alt" id="btn-invite">↗ Send the app to the crew</button>
+      <span class="hint">Shares the app link to WhatsApp or any chat — they open it once, then Add to Home Screen.</span>
+    </div>
 
     <h3>Your boat</h3>
     <p class="hint">Used on the race card and in the SI 20.8 rounding declaration.</p>
@@ -251,6 +256,7 @@
 </div>
 
 <nav class="tabs">
+  <button class="tab" data-tab="race">🗺 Map</button>
   <button class="tab" data-tab="course">Course</button>
   <button class="tab" data-tab="races">Races</button>
   <button class="tab" data-tab="directory">Club</button>

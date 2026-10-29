@@ -338,5 +338,52 @@ const season = perHour * passageLimitH * pack.schedule.length;
 ok('a 17-day season is single-digit MB', season / 1024 / 1024 < 10,
   (season / 1024 / 1024).toFixed(1) + ' MB');
 
+group('track thinning keeps every tack');
+const { thinTrack } = await import('./chart.js');
+// A 1 Hz beat up the Broadwater: 10 tacks, ~2000 fixes, legs ~45° either side
+// of north. Every-Nth decimation used to cut the apex off these.
+const beat = [];
+{
+  let p = { lat: -27.94, lon: 153.418 };
+  let hdg = 45;
+  for (let leg = 0; leg < 10; leg++) {
+    for (let i = 0; i < 200; i++) {
+      p = movePt(p, hdg, 7 / 3600);           // 7 kn at 1 Hz
+      beat.push({ lat: p.lat, lon: p.lon, flags: 0 });
+    }
+    hdg = hdg === 45 ? 315 : 45;
+  }
+}
+beat[500].flags = FLAG_ROUNDED;               // a rounding mid-leg must survive
+const thin = thinTrack(beat, 0.003);
+ok('thins a 2000-fix beat hard', thin.length < beat.length / 10,
+  `${beat.length} -> ${thin.length}`);
+ok('flagged fix survives', thin.includes(beat[500]));
+ok('ends survive', thin[0] === beat[0] && thin[thin.length - 1] === beat[beat.length - 1]);
+// every original fix must sit within tolerance of the thinned polyline
+function distToPolyNm(pt, poly) {
+  const kx = Math.cos(pt.lat * Math.PI / 180);
+  const px = pt.lon * kx * 60, py = pt.lat * 60;
+  let best = Infinity;
+  for (let i = 1; i < poly.length; i++) {
+    const ax = poly[i - 1].lon * kx * 60, ay = poly[i - 1].lat * 60;
+    const bx = poly[i].lon * kx * 60, by = poly[i].lat * 60;
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    let t = len2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    best = Math.min(best, Math.hypot(px - (ax + t * dx), py - (ay + t * dy)));
+  }
+  return best;
+}
+let worstDev = 0;
+for (const f of beat) worstDev = Math.max(worstDev, distToPolyNm(f, thin));
+ok('no fix is more than ~6 m from the drawn line', worstDev <= 0.0033,
+  (worstDev * 1852).toFixed(1) + ' m');
+// the apex of each tack is a kept point, not a rounded corner
+const apexes = [];
+for (let leg = 1; leg < 10; leg++) apexes.push(beat[leg * 200 - 1]);
+ok('every tack apex survives', apexes.every(a => distToPolyNm(a, thin) < 0.0001));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

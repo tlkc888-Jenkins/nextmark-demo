@@ -93,8 +93,15 @@ h3 { font-size: .82rem; margin: 20px 0 6px; text-transform: uppercase;
 /* ---------- countdown ---------- */
 .cdstrip {
   margin: 0 14px 10px; padding: 10px 14px; display: flex; align-items: center; gap: 14px;
+  flex-wrap: wrap;
   background: var(--panel); border: 2px solid var(--accent); border-radius: 12px;
 }
+.cdline {
+  flex-basis: 100%; font-family: ui-monospace, Consolas, monospace;
+  font-variant-numeric: tabular-nums; font-size: .86rem; color: var(--ink);
+  border-top: 1px solid var(--line); padding-top: 7px;
+}
+.cdline.late { color: var(--warn); font-weight: 700; }
 .cdstrip .stage {
   font-size: .64rem; letter-spacing: .14em; text-transform: uppercase;
   color: var(--accent); font-weight: 800; min-width: 92px;
@@ -313,7 +320,7 @@ select, .inp {
 /* ---------- tabs ---------- */
 .tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   background: var(--panel); border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
 }

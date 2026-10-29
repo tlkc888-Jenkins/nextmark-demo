@@ -401,17 +401,52 @@ export class Chart {
 }
 
 /**
- * Thin a track for drawing. Keeps gap markers and anything flagged, so
- * roundings and resume points never disappear from the picture.
+ * Thin a track for drawing without losing its shape.
+ *
+ * Every-Nth subsampling cut the apex off tacks — the one part of the track a
+ * sailor actually studies. Douglas–Peucker instead drops only points that lie
+ * on the line between their neighbours: a straight leg thins to its two ends
+ * while every tack, duck and wind shift survives, within `tolNm` of the truth
+ * (default ~5.5 m, under GPS accuracy). Gap markers and flagged fixes are
+ * breakpoints that always survive, so roundings and resume points never
+ * disappear from the picture.
  */
-export function decimate(track, maxPts) {
-  if (track.length <= maxPts) return track;
-  const step = Math.ceil(track.length / maxPts);
-  const out = [];
-  for (let i = 0; i < track.length; i++) {
-    if (i % step === 0 || track[i].gap || track[i].flags) out.push(track[i]);
+export function thinTrack(track, tolNm = 0.003) {
+  if (track.length < 3) return track;
+  const n = track.length;
+  const keep = new Uint8Array(n);
+  keep[0] = keep[n - 1] = 1;
+
+  const anchors = [0];
+  for (let i = 1; i < n - 1; i++) {
+    if (track[i].gap || track[i].flags) { keep[i] = 1; anchors.push(i); }
   }
-  const last = track[track.length - 1];
-  if (out[out.length - 1] !== last) out.push(last);
+  anchors.push(n - 1);
+
+  // local flat projection in nautical miles — fine at race scale
+  const kx = Math.cos(track[0].lat * D2R);
+  const X = i => track[i].lon * kx * 60;
+  const Y = i => track[i].lat * 60;
+
+  const stack = [];
+  for (let a = 0; a + 1 < anchors.length; a++) stack.push([anchors[a], anchors[a + 1]]);
+  while (stack.length) {
+    const [i0, i1] = stack.pop();
+    if (i1 - i0 < 2) continue;
+    const x0 = X(i0), y0 = Y(i0);
+    const dx = X(i1) - x0, dy = Y(i1) - y0;
+    const len = Math.hypot(dx, dy);
+    let worst = -1, wd = tolNm;
+    for (let i = i0 + 1; i < i1; i++) {
+      const d = len < 1e-9
+        ? Math.hypot(X(i) - x0, Y(i) - y0)
+        : Math.abs(dx * (Y(i) - y0) - dy * (X(i) - x0)) / len;
+      if (d > wd) { wd = d; worst = i; }
+    }
+    if (worst >= 0) { keep[worst] = 1; stack.push([i0, worst], [worst, i1]); }
+  }
+
+  const out = [];
+  for (let i = 0; i < n; i++) if (keep[i]) out.push(track[i]);
   return out;
 }

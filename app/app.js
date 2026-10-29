@@ -4,7 +4,7 @@
 // thumb-sized, and nothing except an explicit "new race" can discard a track.
 
 import {
-  distNm, brgTo, movePt, fmtBrg, fmtDDM, vmc, parseOne, parsePair, brgDiff, quadrantArc,
+  distNm, brgTo, movePt, fmtBrg, fmtDDM, vmc, parseOne, parsePair, brgDiff, quadrantArc, D2R,
 } from './geo.js';
 import {
   TrackRecorder, listRaces, putRace, getRace, deleteRace, loadTrack, findLiveRace,
@@ -12,7 +12,7 @@ import {
   FLAG_RESUME, FLAG_ROUNDED, FLAG_MANUAL, FLAG_START, FLAG_FINISH, FIX_BYTES, available,
 } from './store.js';
 import { Course, RoundingEngine, loadPack, declaration, nearestMarks, offStation, QUAD_NM } from './race.js';
-import { Chart, computeExtent, decimate, COL } from './chart.js';
+import { Chart, computeExtent, thinTrack, COL } from './chart.js';
 import { loadWorld, loadPackCoast } from './coast.js';
 import {
   preparePhoto, blobToDataUrl, readBoard, toProposal, applyProposal, describeLegs,
@@ -53,6 +53,8 @@ const S = {
   lastSaveAt: 0,
   crew: false,           // crew mode: follow the helm's course, don't run the start
   incoming: null,        // a shared course waiting to be confirmed
+  thin: { upto: 0, pts: [] },   // cached thinned track for drawing
+  lastLeft: null,        // countdown seconds at the previous tick, for cues
 };
 
 // ---------------------------------------------------------------------------
@@ -88,6 +90,7 @@ async function boot() {
   await refreshStorage();
   renderAll();
   wireEvents();
+  showPanel('');   // start on the map, with the Map tab lit
 
   // A link from the group chat. Read it, but never apply it on arrival.
   await handleIncomingLink();
@@ -134,6 +137,7 @@ async function recoverLiveRace(live) {
   S.gunAt = live.gunAt || null;
   S.targetAt = live.targetAt || null;
   try { S.track = markGaps(await loadTrack(live.id)); } catch { S.track = []; }
+  S.thin = { upto: 0, pts: [] };
   if (S.track.length) {
     const last = S.track[S.track.length - 1];
     S.fix = { lat: last.lat, lon: last.lon, sog: last.sog, cog: last.cog, acc: last.acc };
@@ -181,6 +185,7 @@ async function newRace(name) {
     sail: await getSetting('sail', ''),
   };
   S.track = [];
+  S.thin = { upto: 0, pts: [] };
   S.engine = new RoundingEngine(S.course);
   S.phase = 'idle';
   S.gunAt = null;
@@ -241,9 +246,44 @@ async function finishRace() {
 // the app comes back it simply reads the clock again.
 // ---------------------------------------------------------------------------
 
+// A phone in a pocket needs more than pixels. The AudioContext must be created
+// from a user gesture, so arming the start primes it.
+let audioCtx = null;
+function primeAudio() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch { audioCtx = null; }
+}
+
+function beep(count = 1, longMs = 160) {
+  if (!audioCtx) return;
+  try {
+    for (let i = 0; i < count; i++) {
+      const t0 = audioCtx.currentTime + i * 0.3;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.5, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + longMs / 1000);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(t0); o.stop(t0 + longMs / 1000 + 0.05);
+    }
+  } catch { /* audio is a nicety, never a failure */ }
+}
+
+function cue(beeps, longMs, msg) {
+  beep(beeps, longMs);
+  if (navigator.vibrate) { try { navigator.vibrate([250, 120, 250]); } catch { /* ignore */ } }
+  if (msg) toast(msg, 6000);
+}
+
 function armStart(seconds) {
+  primeAudio();
   S.targetAt = Date.now() + seconds * 1000;
   S.phase = 'pre';
+  S.lastLeft = null;
   acquireWake();
   saveRace(true);
   renderAll();
@@ -256,14 +296,16 @@ function abortStart() {
   renderAll();
 }
 
-/** Set the gun to a wall-clock time today, e.g. the 11:00 start. */
+/** Set the gun to a wall-clock time today — load it well before the start. */
 function armAt(hhmm) {
+  primeAudio();
   const [h, m] = hhmm.split(':').map(Number);
   const t = new Date();
   t.setHours(h, m, 0, 0);
   if (t.getTime() < Date.now()) t.setDate(t.getDate() + 1);
   S.targetAt = t.getTime();
   S.phase = 'pre';
+  S.lastLeft = null;
   acquireWake();
   saveRace(true);
   renderAll();
@@ -279,11 +321,24 @@ function startRacing(at) {
   renderAll();
 }
 
+// Sound/vibration milestones on the way to a preloaded start.
+const CUES = [
+  [300, () => cue(1, 400, '5 minutes — warning')],
+  [240, () => cue(2, 160, '4 minutes — preparatory')],
+  [60, () => cue(3, 160, '1 minute')],
+];
+
 function tickClock() {
   if (S.phase === 'pre' && S.targetAt != null) {
     const left = S.targetAt - Date.now();
+    const total = Math.ceil(left / 1000);
+    for (const [at, fire] of CUES) {
+      if (S.lastLeft != null && S.lastLeft > at && total <= at) fire();
+    }
+    S.lastLeft = total;
     if (left <= 0) {
       startRacing(S.targetAt);
+      cue(1, 900, null);
       toast('GUN — racing. Auto-advance armed.', 5000);
     }
   }
@@ -434,12 +489,28 @@ window.addEventListener('pagehide', () => {
 // drawing
 // ---------------------------------------------------------------------------
 
+/**
+ * The track as drawn: the older part thinned shape-true (tacks intact), the
+ * last few minutes at full resolution, re-thinning only every few hundred new
+ * fixes so a 1 Hz feed never pays for the whole track each second.
+ */
+function shownTrack() {
+  const RAW_TAIL = 400;
+  const t = S.track;
+  if (t.length <= RAW_TAIL * 2) return t;
+  const cutoff = t.length - RAW_TAIL;
+  if (S.thin.upto > cutoff || S.thin.upto < cutoff - 600) {
+    S.thin = { upto: cutoff, pts: thinTrack(t.slice(0, cutoff + 1)) };
+  }
+  return S.thin.pts.concat(t.slice(S.thin.upto + 1));
+}
+
 function draw() {
   if (!S.chart || !S.course) return;
   const seq = S.course.sequence();
   const pts = seq.map(w => w.pos).filter(Boolean);
   if (S.fix) pts.push(S.fix);
-  const shown = decimate(S.track, 1200);
+  const shown = shownTrack();
   for (const p of shown) pts.push(p);
 
   const box = el('chartwrap').getBoundingClientRect();
@@ -483,7 +554,59 @@ function renderAll() {
   draw();
 }
 
+/**
+ * Shortest distance to the start line, in nm: perpendicular to the pinned line
+ * when both ends are pinned, else straight to the published position.
+ */
+function distToLineNm(fix) {
+  const ends = S.course.lineEnds;
+  if (ends.length === 2) {
+    const kx = Math.cos(fix.lat * D2R);
+    const ax = (ends[0].lon - fix.lon) * kx * 60, ay = (ends[0].lat - fix.lat) * 60;
+    const bx = (ends[1].lon - fix.lon) * kx * 60, by = (ends[1].lat - fix.lat) * 60;
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    let t = len2 > 0 ? -(ax * dx + ay * dy) / len2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(ax + t * dx, ay + t * dy);
+  }
+  const p = S.course.startPos();
+  return p ? distNm(fix, p) : null;
+}
+
+const fmtMs = secs => `${Math.floor(secs / 60)}:${String(Math.floor(secs % 60)).padStart(2, '0')}`;
+
 function renderNumbers() {
+  // In the pre-start the only mark that matters is the line.
+  if (S.phase === 'pre') {
+    el('nextmark').textContent = 'Start line';
+    const badge = el('sidebadge');
+    badge.textContent = S.course.lineEnds.length === 2 ? 'PINNED' : 'LINE';
+    badge.className = 'side N';
+    const set = (id, v) => { el(id).textContent = v; };
+    const lp = S.course.startPos();
+    if (!S.fix || !lp) {
+      for (const id of ['brg', 'dtm', 'ttm', 'sog', 'cog', 'vmc']) set(id, '—');
+      el('offline-note').hidden = !!S.fix;
+      return;
+    }
+    el('offline-note').hidden = true;
+    const d = distToLineNm(S.fix);
+    const b = brgTo(S.fix, lp);
+    const v = vmc(S.fix.sog, S.fix.cog, b);
+    set('brg', fmtBrg(b));
+    set('dtm', d < 10 ? d.toFixed(2) : d.toFixed(1));
+    set('sog', (S.fix.sog || 0).toFixed(1));
+    set('cog', fmtBrg(S.fix.cog || 0));
+    set('vmc', v.toFixed(1));
+    if (v > 0.3) {
+      set('ttm', fmtMs(d / v * 3600));
+      el('ttm-unit').textContent = 'to line';
+    } else { set('ttm', '—'); el('ttm-unit').textContent = ''; }
+    el('vmctile').classList.toggle('bad', false);
+    return;
+  }
+
   const wp = S.engine ? S.engine.current() : null;
   el('nextmark').textContent = wp ? wp.label : S.phase === 'finished' ? 'FINISHED' : '—';
   const badge = el('sidebadge');
@@ -535,10 +658,34 @@ function renderClock() {
     const m = Math.floor(total / 60), s = total % 60;
     strip.hidden = false;
     el('cddig').textContent = `${m}:${String(s).padStart(2, '0')}`;
-    el('cdstage').textContent = total > 240 ? 'WARNING'
-      : total > 60 ? 'PREPARATORY' : total > 10 ? 'LAST MINUTE' : 'GUN';
+    el('cdstage').textContent = total > 300 ? 'ARMED'
+      : total > 240 ? 'WARNING'
+        : total > 60 ? 'PREPARATORY' : total > 10 ? 'LAST MINUTE' : 'GUN';
     strip.classList.toggle('imminent', total <= 60);
     c.textContent = `T −${m}:${String(s).padStart(2, '0')}`;
+
+    // Time-on-distance to the line: can we reach it before the gun, and by how
+    // much? Positive margin means hold back; negative means go, you are late.
+    const lineBox = el('cdline');
+    const lp = S.course ? S.course.startPos() : null;
+    if (S.fix && lp) {
+      const d = distToLineNm(S.fix);
+      const v = vmc(S.fix.sog, S.fix.cog, brgTo(S.fix, lp));
+      let txt = `${d.toFixed(2)} nm to the line`;
+      if (v > 0.3) {
+        const sailSec = d / v * 3600;
+        const margin = total - sailSec;
+        txt += ` · ${fmtMs(sailSec)} to sail it`;
+        txt += margin >= 0 ? ` · ${fmtMs(margin)} in hand` : ` · ${fmtMs(-margin)} LATE`;
+        lineBox.classList.toggle('late', margin < 0);
+      } else {
+        lineBox.classList.remove('late');
+      }
+      lineBox.textContent = txt;
+      lineBox.hidden = false;
+    } else {
+      lineBox.hidden = true;
+    }
   } else {
     strip.hidden = true;
     if (S.gunAt) {
@@ -623,9 +770,9 @@ function renderControls() {
   el('btn-gps').textContent = S.gps.on ? '📍 GPS on' : '📍 Start GPS';
   el('btn-gps').classList.toggle('on', S.gps.on);
   const go = el('btn-go');
-  if (S.phase === 'pre') { go.textContent = 'Abort start'; go.className = 'btn danger'; }
-  else if (S.phase === 'racing') { go.textContent = 'Finish race'; go.className = 'btn'; }
-  else { go.textContent = 'Arm start'; go.className = 'btn primary'; }
+  if (S.phase === 'pre') { go.textContent = 'Abort start'; go.className = 'btn danger big'; }
+  else if (S.phase === 'racing') { go.textContent = '◼ Finish & save'; go.className = 'btn primary big'; }
+  else { go.textContent = 'Arm start'; go.className = 'btn primary big'; }
   el('btn-prev').disabled = !S.engine || S.engine.wpIdx <= 1;
   el('btn-next').disabled = !S.engine || S.engine.done();
   el('btn-ping').textContent = S.course && S.course.lineEnds.length
@@ -771,9 +918,13 @@ function afterCourseEdit() {
 // ---------------------------------------------------------------------------
 
 function showPanel(name) {
+  if (name === 'race') name = '';   // the Map tab: no panel, back to the water
   for (const p of document.querySelectorAll('.panel')) p.hidden = p.dataset.panel !== name;
-  for (const t of document.querySelectorAll('.tab')) t.classList.toggle('on', t.dataset.tab === name);
+  for (const t of document.querySelectorAll('.tab')) {
+    t.classList.toggle('on', t.dataset.tab === name || (!name && t.dataset.tab === 'race'));
+  }
   el('panelwrap').hidden = !name;
+  if (!name) draw();   // the chart was behind a panel; its box may have changed
   if (name === 'races') renderRaces();
   if (name === 'settings') renderSettings();
   if (name === 'directory') renderDirectory();
@@ -825,7 +976,10 @@ async function renderRaces() {
 async function confirmDelete(r) {
   if (!confirm(`Delete "${r.name}" and its track? This cannot be undone.`)) return;
   await deleteRace(r.id);
-  if (S.race && S.race.id === r.id) { S.race = null; S.recorder = null; S.track = []; renderAll(); }
+  if (S.race && S.race.id === r.id) {
+    S.race = null; S.recorder = null; S.track = []; S.thin = { upto: 0, pts: [] };
+    renderAll();
+  }
   await refreshStorage();
   renderRaces();
   toast('Deleted.');
@@ -1598,11 +1752,22 @@ function wireEvents() {
   };
   el('set-crew').onchange = e => setCrew(e.target.checked);
 
+  el('btn-invite').onclick = async () => {
+    const url = location.origin + location.pathname;
+    const text = 'NextMark race pilot — open this on your phone, then Add to Home Screen so it works offline:';
+    if (navigator.share) {
+      try { await navigator.share({ title: 'NextMark', text, url }); return; }
+      catch { /* dismissed — fall through to WhatsApp */ }
+    }
+    window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url), '_blank');
+  };
+
   el('decl-share').onclick = shareDeclaration;
   el('decl-close').onclick = () => { el('decl').hidden = true; };
 
   for (const t of document.querySelectorAll('.tab')) {
-    t.onclick = () => showPanel(t.classList.contains('on') ? '' : t.dataset.tab);
+    t.onclick = () => showPanel(
+      t.classList.contains('on') && t.dataset.tab !== 'race' ? '' : t.dataset.tab);
   }
   el('warnbar').onclick = () => { el('warnbar').hidden = true; };
 

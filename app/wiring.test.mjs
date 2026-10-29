@@ -42,7 +42,8 @@ for (const id of [...htmlIds].sort()) {
 console.log('\ndata-panel and data-tab attributes line up');
 const panels = new Set([...html.matchAll(/data-panel="([^"]+)"/g)].map(m => m[1]));
 const tabs = new Set([...html.matchAll(/data-tab="([^"]+)"/g)].map(m => m[1]));
-for (const t of tabs) ok(`tab "${t}" has a panel`, panels.has(t));
+// "race" is the map itself, not a panel — it closes whatever panel is open
+for (const t of tabs) ok(`tab "${t}" has a panel`, t === 'race' || panels.has(t));
 for (const p of panels) ok(`panel "${p}" has a tab`, tabs.has(p));
 
 console.log('\nclasses the script toggles exist in the stylesheet');
