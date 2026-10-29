@@ -84,7 +84,7 @@
     <button class="btn primary big" id="btn-go">Arm start</button>
     <select id="armlen" aria-label="Start sequence length"></select>
     <button class="btn alt" id="btn-armat">Arm for</button>
-    <select id="armat" aria-label="Start time"></select>
+    <input type="time" id="armat" class="inp short" aria-label="Start time — your handicap time in a pursuit race">
     <button class="btn alt" id="btn-ping">⚓ Pin line end</button>
     <button class="btn primary big" id="btn-crewstart" hidden>▶ Start recording</button>
     <button class="btn" id="btn-crewstop" hidden>Stop &amp; save</button>
@@ -93,7 +93,7 @@
 
   <div class="legs">
     <div class="legshead">
-      <span class="k">Course — auto-advances on a valid quadrant fix</span>
+      <span class="k" id="legsheadk">Course — auto-advances on a valid quadrant fix</span>
       <span id="coursemeta" class="mono"></span>
     </div>
     <div id="leglist"></div>
@@ -110,6 +110,10 @@
       given at the Compulsory Skippers Briefing. Build it here from the board, in the order you sail it.
     </p>
 
+    <div class="row">
+      <label for="packsel">Series</label>
+      <select id="packsel"></select>
+    </div>
     <div class="row" id="courserow">
       <label for="division">Division</label>
       <select id="division"></select>

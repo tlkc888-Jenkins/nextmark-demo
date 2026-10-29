@@ -5,7 +5,7 @@
 // fetch on the way to the first mark. So everything is precached on install and
 // served cache-first, with a background refresh when there is signal.
 
-const CACHE = 'nextmark-v5';
+const CACHE = 'nextmark-v6';
 
 const SHELL = [
   './',
@@ -24,6 +24,7 @@ const SHELL = [
   'app/ingest.js',
   'app/share.js',
   'data/syc-offshore-2627.json',
+  'data/syc-twilight-2627.json',
   'data/coast-syc.json',
   'data/coast-world.json',
 ];

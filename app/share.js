@@ -74,6 +74,8 @@ export function encodeCourse(course, opts = {}) {
     payload.e = course.lineEnds.map(p => [round7(p.lat), round7(p.lon)]);
   }
   if (course.windFrom != null) payload.w = Math.round(course.windFrom);
+  if (course.startId) payload.s = course.startId;
+  if (course.finishId) payload.f = course.finishId;
   if (opts.crew) payload.k = 'crew';
 
   const json = JSON.stringify(payload);
@@ -160,6 +162,8 @@ export function toSharedProposal(data, course) {
     division: data.d || null,
     crew: data.k === 'crew',
     wind: data.w == null ? null : data.w,
+    startId: null,
+    finishId: null,
     legs: [],
     localMarks: [],
     lineEnds: [],
@@ -198,6 +202,15 @@ export function toSharedProposal(data, course) {
   for (const e of data.e || []) {
     if (Array.isArray(e) && isFinite(e[0]) && isFinite(e[1])) out.lineEnds.push({ lat: e[0], lon: e[1] });
   }
+
+  // Start and finish lines must resolve to published line marks, or the crew's
+  // chart would invent a line the pack does not have.
+  const lines = new Set(course.pack.marks.filter(m => m.kind === 'line').map(m => m.id));
+  for (const [key, field] of [['s', 'startId'], ['f', 'finishId']]) {
+    if (data[key] == null) continue;
+    if (lines.has(data[key])) out[field] = String(data[key]);
+    else out.problems.push(`Shared course ${field === 'startId' ? 'starts' : 'finishes'} on "${data[key]}", which is not a published line.`);
+  }
   return out;
 }
 
@@ -214,6 +227,8 @@ export function applySharedCourse(course, prop) {
   course.courseId = prop.courseId;
   if (prop.division) course.division = prop.division;
   if (prop.wind != null) course.windFrom = prop.wind;
+  course.startId = prop.startId || null;
+  course.finishId = prop.finishId || null;
   course.lineEnds = prop.lineEnds.map(p => ({ ...p }));
   course.legs = prop.legs.map(l => ({ ...l }));
   return { ok: true, count: course.legs.length };

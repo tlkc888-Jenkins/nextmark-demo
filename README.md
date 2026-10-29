@@ -22,6 +22,25 @@ Three clauses of the SIs shape the design:
 | 10.7 | A valid GPS fix inside a mark's 90° quadrant is deemed to have rounded it | Auto-advance is a quadrant test, not a proximity radius — so it is rule-correct, not just convenient |
 | 20.8 | Within 15 min of rounding, text the RO the yacht name and a photo of an instrument showing the fix and time inside the quadrant | Generates exactly that card, ready to share |
 
+## Two series, one app
+
+The app ships two SYC course packs and a **Series** switcher on the Course tab:
+
+- **Offshore Division 2026/27** — Sunday racing as above: the X1 builder,
+  quadrant rounding, the 20.8 declaration.
+- **Thursday Twilight 2026/27** — pursuit racing on the Broadwater. Fourteen
+  published courses (Attachment D) load with one tap, each with its own
+  Division 1 / Division 2 mark sequence and — new for this pack — a **finish
+  line that is not the start line** (Wave-Break or Main Beach at either end).
+  Course 15 is the Div 1 offshore option, set on the day, so it is a builder
+  course like X1. The TT SIs publish no rounding quadrants and no declaration,
+  so auto-advance falls back to proximity (~75 m) and the declaration UI stays
+  out of the way. "Arm for" takes any clock time, because a pursuit start is
+  your own handicap minute, with the preparatory signal 4 minutes before it.
+
+A course shared to the crew carries its start and finish lines with it, and a
+link from one series is refused by an app that has the other loaded.
+
 ## On the water
 
 Nothing but an explicit **New race** discards a track. Changing the wind,
@@ -126,11 +145,14 @@ curl -A "NextMark coastline-build" -X POST https://overpass-api.de/api/interpret
   -o osm_gc.json
 python build_pack_coast.py osm_gc.json coast-syc.json 25
 python build_pack_syc.py                        # -> syc-offshore-2627.json
+python build_pack_syc_tt.py                     # -> syc-twilight-2627.json
 ```
 
-`build_pack_syc.py` holds every mark transcribed verbatim from Attachment B of
-the SIs as degrees-and-decimal-minutes; the decimal degrees the app uses are
-derived there, so no conversion is done by hand.
+The pack builders hold every mark transcribed verbatim from Attachment B of
+their SIs as degrees-and-decimal-minutes; the decimal degrees the app uses are
+derived there, so no conversion is done by hand. Course sequences are
+transcribed as the SI writes them (`H E(s) G F(s) H(s)`) and parsed the same
+way.
 
 ## Tests
 
@@ -138,6 +160,7 @@ derived there, so no conversion is done by hand.
 node app/geo.test.mjs      # geometry, quadrants, coordinate parsing
 node app/race.test.mjs     # pack, rounding engine, board ingest, codec
 node app/share.test.mjs    # course share links: round trip, damage, refusal
+node app/twilight.test.mjs # twilight pack, per-division courses, split lines
 node app/wiring.test.mjs   # markup/script/style/service-worker wiring
 ```
 
@@ -145,5 +168,8 @@ node app/wiring.test.mjs   # markup/script/style/service-worker wiring
 
 Sailing Instructions 2026–2027 Offshore Division (incl. Amendment 1),
 Southport Yacht Club Inc. — <https://southportyachtclub.com.au/offshore/>
+
+Thursday Twilight 2026/27 Sailing Instructions, Southport Yacht Club Inc. —
+<https://southportyachtclub.com.au/sailing/twilight-inshore/>
 
 Not for navigation.

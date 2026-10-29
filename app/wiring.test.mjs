@@ -75,7 +75,8 @@ for (const m of modules) {
 }
 
 console.log('\ndata files referenced by the code are present');
-for (const rel of ['data/syc-offshore-2627.json', 'data/coast-world.json', 'data/coast-syc.json']) {
+for (const rel of ['data/syc-offshore-2627.json', 'data/syc-twilight-2627.json',
+  'data/coast-world.json', 'data/coast-syc.json']) {
   ok(rel, fs.existsSync(path.join(root, rel)));
 }
 for (const f of ['manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png']) {
@@ -87,7 +88,8 @@ const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 for (const need of [
   'race.html', 'app/app.js', 'app/app.css', 'app/geo.js', 'app/store.js',
   'app/race.js', 'app/chart.js', 'app/coast.js', 'app/ingest.js',
-  'data/syc-offshore-2627.json', 'data/coast-world.json', 'data/coast-syc.json',
+  'data/syc-offshore-2627.json', 'data/syc-twilight-2627.json',
+  'data/coast-world.json', 'data/coast-syc.json',
 ]) {
   ok(`sw caches ${need}`, sw.includes(need), 'not in the service worker shell list');
 }

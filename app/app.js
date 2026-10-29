@@ -21,7 +21,13 @@ import {
 import { courseLink, decodeCourse, toSharedProposal, applySharedCourse } from './share.js';
 
 const el = id => document.getElementById(id);
-const PACK_URL = 'data/syc-offshore-2627.json';
+
+// Every series this build ships. The names mirror the packs' own, so the
+// switcher can be drawn before either file is fetched.
+const PACKS = [
+  { id: 'syc-offshore-2627', url: 'data/syc-offshore-2627.json', name: 'SYC Offshore 2026/27' },
+  { id: 'syc-twilight-2627', url: 'data/syc-twilight-2627.json', name: 'SYC Thursday Twilight 2026/27' },
+];
 
 const S = {
   pack: null,
@@ -55,8 +61,15 @@ const S = {
 
 async function boot() {
   S.chart = new Chart(el('chart'));
+
+  // A race still recording wins the choice of pack: recovery must put the boat
+  // back on the course it was sailing, not the series last browsed.
+  let live = null;
+  try { live = await findLiveRace(); } catch { /* storage unavailable */ }
+  const wanted = (live && live.packId) || await getSetting('pack', PACKS[0].id);
+  const packDef = PACKS.find(p => p.id === wanted) || PACKS[0];
   try {
-    S.pack = await loadPack(PACK_URL);
+    S.pack = await loadPack(packDef.url);
   } catch (e) {
     fatal('Could not load the course pack. ' + e.message);
     return;
@@ -71,7 +84,7 @@ async function boot() {
   S.crew = await getSetting('crew', false);
 
   buildStaticUi();
-  await recoverLiveRace();
+  await recoverLiveRace(live);
   await refreshStorage();
   renderAll();
   wireEvents();
@@ -111,9 +124,7 @@ function toast(msg, ms = 4200) {
  * This is the whole point of the persistence layer: a lock screen, a reload, a
  * crash or a flat battery must not cost the race.
  */
-async function recoverLiveRace() {
-  let live;
-  try { live = await findLiveRace(); } catch { return; }
+async function recoverLiveRace(live) {
   if (!live) return;
   S.race = live;
   S.course = new Course(S.pack, live.course || {});
@@ -375,7 +386,7 @@ function announce(ev) {
   const side = ev.side === 'P' ? 'port' : ev.side === 'S' ? 'starboard' : '';
   toast(`Rounded ${ev.label}${side ? ' to ' + side : ''}` +
     (ev.how === 'quadrant' ? ' — valid quadrant fix ✓' : ' — proximity'), 7000);
-  if (ev.how === 'quadrant') showDeclaration(ev);
+  if (ev.how === 'quadrant' && S.pack.rules.declaration_si) showDeclaration(ev);
   if (navigator.vibrate) { try { navigator.vibrate([120, 60, 120]); } catch { /* ignore */ } }
 }
 
@@ -592,7 +603,7 @@ function renderLegs() {
       tag.className = 'how ' + ev.how;
       tag.textContent = ev.how === 'quadrant' ? 'quadrant ✓' : ev.how === 'manual' ? 'by hand' : ev.how;
       row.append(tag);
-      if (ev.fix) {
+      if (ev.fix && S.pack.rules.declaration_si) {
         const btn = document.createElement('button');
         btn.className = 'mini';
         btn.textContent = 'declare';
@@ -629,7 +640,39 @@ function renderControls() {
 // course builder
 // ---------------------------------------------------------------------------
 
+/**
+ * Load a published course onto the builder: its legs (resolving gates and
+ * per-division sequences) and the lines it starts and finishes on.
+ */
+function loadPresetCourse(c, opts = {}) {
+  const dv = c.div ? (c.div[S.course.division] || c.div.D2 || Object.values(c.div)[0]) : null;
+  const seq = dv ? dv.seq : (c.seq || []);
+  S.course.legs = seq.map(([mark, side]) =>
+    side === 'G' ? { markId: mark.split('|')[0], side: 'P', gate: mark.split('|') } : { markId: mark, side });
+  S.course.startId = c.start || null;
+  S.course.finishId = c.finish || null;
+  if (opts.quiet) return;
+  if (S.pack.relative_marks && S.pack.relative_marks.length) {
+    toast(`${c.id} loaded. Marks ${S.pack.relative_marks.map(m => m.id).join('/')} are laid on the day — check the board.`, 7000);
+  } else {
+    const fin = S.course.finishMark();
+    toast(`Course ${c.id} loaded for ${S.course.division}` +
+      (fin && !S.course.finishesAtStart() ? ` — finish is at ${fin.name}` : '') + '.', 7000);
+  }
+}
+
 function renderBuilder() {
+  // series
+  const ksel = el('packsel');
+  if (!ksel.options.length) {
+    for (const p of PACKS) {
+      const o = document.createElement('option');
+      o.value = p.id; o.textContent = p.name;
+      ksel.append(o);
+    }
+  }
+  ksel.value = S.pack.id;
+
   // division
   const dsel = el('division');
   if (!dsel.options.length) {
@@ -1402,16 +1445,25 @@ function hint(t) {
 // ---------------------------------------------------------------------------
 
 function buildStaticUi() {
+  const rules = S.pack.rules;
   el('packname').textContent = S.pack.name;
-  el('vhf').textContent = `VHF ${S.pack.rules.vhf_race} race · ${S.pack.rules.vhf_seaway} seaway`;
+  el('vhf').textContent = `VHF ${rules.vhf_race}` +
+    (rules.vhf_seaway ? ` race · ${rules.vhf_seaway} seaway` : '');
+
+  if (S.pack.course_note) el('coursehelp').textContent = S.pack.course_note;
+  el('legsheadk').textContent = rules.quadrant_si
+    ? 'Course — auto-advances on a valid quadrant fix'
+    : 'Course — auto-advances within ~75 m of each mark';
+
   const sel = el('armlen');
-  for (const [label, sec] of [['5:00 (SI 12.1)', 300], ['3:00', 180], ['1:00', 60], ['0:20 test', 20]]) {
+  const presets = rules.arm_presets ||
+    [['5:00 (SI 12.1)', 300], ['3:00', 180], ['1:00', 60], ['0:20 test', 20]];
+  for (const [label, sec] of presets) {
     const o = document.createElement('option'); o.value = String(sec); o.textContent = label; sel.append(o);
   }
-  const at = el('armat');
-  for (const t of ['11:00', '11:30', '12:00', '12:30', '13:00']) {
-    const o = document.createElement('option'); o.value = t; o.textContent = t; at.append(o);
-  }
+  // Pursuit starts land on any minute of the clock, so this is a time field,
+  // prefilled with the series' earliest start.
+  el('armat').value = rules.first_start_hint || '11:00';
 }
 
 function wireEvents() {
@@ -1427,8 +1479,10 @@ function wireEvents() {
     armStart(+el('armlen').value);
   };
   el('btn-armat').onclick = async () => {
+    const t = el('armat').value;
+    if (!t) { toast('Set your start time first — for a pursuit race it is your allocated handicap time.'); return; }
     if (!S.race) await newRace();
-    armAt(el('armat').value);
+    armAt(t);
   };
   el('btn-gun').onclick = () => { if (confirm('Record the gun now?')) startRacing(Date.now()); };
 
@@ -1469,20 +1523,32 @@ function wireEvents() {
   el('follow').onclick = () => { S.follow = !S.follow; renderControls(); draw(); };
   el('zoom').oninput = () => draw();
 
+  el('packsel').onchange = async e => {
+    const id = e.target.value;
+    if (id === S.pack.id) return;
+    // A recording race belongs to its pack; switching under it would re-score
+    // the day's roundings against the wrong marks.
+    if (S.race && S.race.status === 'live') {
+      toast('Finish or save the recording race before switching series.', 7000);
+      e.target.value = S.pack.id;
+      return;
+    }
+    await setSetting('pack', id);
+    location.reload();
+  };
   el('division').onchange = async e => {
     S.course.division = e.target.value;
     await setSetting('division', e.target.value);
+    // A per-division course (twilight) changes its marks with the division.
+    const c = S.pack.courses.find(x => x.id === S.course.courseId);
+    if (c && c.div) loadPresetCourse(c, { quiet: true });
     renderBuilder(); afterCourseEdit();
   };
   el('preset').onchange = e => {
     const c = S.pack.courses.find(x => x.id === e.target.value);
     S.course.courseId = e.target.value;
-    if (c && !c.builder) {
-      // A published W/L course: load its legs, resolving the gates.
-      S.course.legs = c.seq.map(([mark, side]) =>
-        side === 'G' ? { markId: mark.split('|')[0], side: 'P', gate: mark.split('|') } : { markId: mark, side });
-      toast(`${c.id} loaded. Marks 1/1a/2/3p/3s are laid on the day — check the board.`, 7000);
-    }
+    if (c && !c.builder) loadPresetCourse(c);
+    else { S.course.startId = (c && c.start) || null; S.course.finishId = (c && c.finish) || null; }
     afterCourseEdit();
   };
   el('btn-clearcourse').onclick = () => {

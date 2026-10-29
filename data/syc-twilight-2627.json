@@ -1,0 +1,1641 @@
+{
+ "id": "syc-twilight-2627",
+ "name": "SYC Thursday Twilight 2026/27",
+ "club": "Southport Yacht Club",
+ "club_url": "https://southportyachtclub.com.au/sailing/twilight-inshore/",
+ "country": "Australia",
+ "state": "QLD",
+ "datum": "WGS84",
+ "source": {
+  "title": "Thursday Twilight 2026/27 Sailing Instructions",
+  "url": "https://southportyachtclub.com.au/wp-content/uploads/2026/04/TT-26-27-Sailing-Instructions.pdf",
+  "authority": "Southport Yacht Club Inc.",
+  "rrs": "Racing Rules of Sailing 2025-2028",
+  "category": "AS SR Part 1 - Category 4 (Div 1), Category 7 Plus (Div 2)"
+ },
+ "course_note": "Thursday Twilights are pursuit races on the Broadwater: every boat has her own handicap start time and starts no earlier than it. The course number comes with the briefing email and is flown on the start boat - load it below and the published marks come with it. Course 15 (Div 1 offshore) is set on the day; build it here from the briefing.",
+ "divisions": [
+  {
+   "id": "D1",
+   "name": "Division 1",
+   "note": "AS SR Category 4. May be sent offshore (course 15) at the RC's discretion. VHF 10."
+  },
+  {
+   "id": "D2",
+   "name": "Division 2",
+   "note": "AS SR Category 7 Plus. Broadwater courses only. VHF 09."
+  }
+ ],
+ "rules": {
+  "default_rounding": "P",
+  "default_rounding_si": "Attachment D - all marks to be left/passed to port unless indicated by (s), in which case to starboard.",
+  "start_si": "SI 11 - pursuit race. A boat shall start no earlier than her allocated handicap start time; her preparatory signal is 4 minutes before it (changes RRS 26). Keep clear of the line and the course side for the 5 minutes before your time (SI 11.4, 20% ENP).",
+  "prep_signal_sec": 240,
+  "arm_presets": [
+   [
+    "4:00 (TT prep)",
+    240
+   ],
+   [
+    "3:00",
+    180
+   ],
+   [
+    "1:00",
+    60
+   ],
+   [
+    "0:20 test",
+    20
+   ]
+  ],
+  "first_start_hint": "15:30",
+  "series_times": {
+   "Winter": {
+    "first_start": "15:00",
+    "finish_by": "18:00"
+   },
+   "Spring": {
+    "first_start": "15:30",
+    "finish_by": "18:30"
+   },
+   "Summer": {
+    "first_start": "15:30",
+    "finish_by": "18:30"
+   }
+  },
+  "vhf_race": "10 Div 1 · 09 Div 2",
+  "min_crew": 2,
+  "iala_si": "SI 10.1-10.2 - keep a safe clearance from all IALA navigation marks and mind the tide when rounding them.",
+  "sail_si": "SI 7 - no spinnakers, gennakers, code zeros or any purpose-built downwind sail. Poling out a headsail is allowed.",
+  "penalty_si": "SI 14.1 - the Two-Turns Penalty is replaced by a One-Turn Penalty (changes RRS 44.1).",
+  "entry_si": "SI 2.4 / 4.2 - enter via TopYacht by 1400 Tuesday; confirm intention to race by 1400 on race day or you may be excluded from starting.",
+  "shorten_si": "SI 12 - a shortened course finishes between the RC vessel flying code flag S and a prominent feature of your choice."
+ },
+ "marks": [
+  {
+   "id": "WBS1",
+   "name": "Wave-Break Start 1",
+   "kind": "line",
+   "si_lat": "27 55.676 S",
+   "si_lon": "153 25.057 E",
+   "lat": -27.927933,
+   "lon": 153.417617,
+   "note": "Between the first port/starboard laterals, near the southern end of Carters Bank. Attachment D courses say just 'WBS' - the RC anchors the line at WBS1 or WBS2 on the day. Pin the line ends on the water."
+  },
+  {
+   "id": "WBS2",
+   "name": "Wave-Break Start 2",
+   "kind": "line",
+   "si_lat": "27 55.321 S",
+   "si_lon": "153 24.895 E",
+   "lat": -27.922017,
+   "lon": 153.414917,
+   "note": "Between the second port/starboard laterals, north of WBS1. Attachment D courses say just 'WBS' - the RC anchors the line at WBS1 or WBS2 on the day. Pin the line ends on the water."
+  },
+  {
+   "id": "WBF",
+   "name": "Wave-Break Finish",
+   "kind": "line",
+   "si_lat": "27 56.393 S",
+   "si_lon": "153 25.213 E",
+   "lat": -27.939883,
+   "lon": 153.420217,
+   "note": "Between the port lateral and the special mark (yellow cross)."
+  },
+  {
+   "id": "MBSF",
+   "name": "Main Beach Start/Finish",
+   "kind": "line",
+   "si_lat": "27 58.304 S",
+   "si_lon": "153 25.348 E",
+   "lat": -27.971733,
+   "lon": 153.422467,
+   "note": "Port/starboard laterals opposite the SYC D-arm jetty."
+  },
+  {
+   "id": "C",
+   "name": "Crab Island",
+   "kind": "course",
+   "si_lat": "27 53.940 S",
+   "si_lon": "153 25.136 E",
+   "lat": -27.899,
+   "lon": 153.418933,
+   "note": "Port lateral. SI 10.1: an IALA navigation mark - keep a safe clearance."
+  },
+  {
+   "id": "E",
+   "name": "SYC Mark",
+   "kind": "course",
+   "si_lat": "27 55.092 S",
+   "si_lon": "153 24.659 E",
+   "lat": -27.9182,
+   "lon": 153.410983,
+   "note": "SYC inflatable cylinder buoy."
+  },
+  {
+   "id": "F",
+   "name": "Deep Hole",
+   "kind": "course",
+   "si_lat": "27 54.980 S",
+   "si_lon": "153 24.842 E",
+   "lat": -27.916333,
+   "lon": 153.414033,
+   "note": "Starboard lateral. SI 10.1: an IALA navigation mark - keep a safe clearance."
+  },
+  {
+   "id": "G",
+   "name": "South Stradbroke Stbd",
+   "kind": "course",
+   "si_lat": "27 55.654 S",
+   "si_lon": "153 25.085 E",
+   "lat": -27.927567,
+   "lon": 153.418083,
+   "note": "Starboard lateral. SI 10.1: an IALA navigation mark - keep a safe clearance."
+  },
+  {
+   "id": "H",
+   "name": "Seaway East Cardinal",
+   "kind": "course",
+   "si_lat": "27 56.170 S",
+   "si_lon": "153 25.328 E",
+   "lat": -27.936167,
+   "lon": 153.422133,
+   "note": "East cardinal. SI 10.1: an IALA navigation mark - keep a safe clearance."
+  },
+  {
+   "id": "J",
+   "name": "South Stradbroke Port",
+   "kind": "course",
+   "si_lat": "27 55.698 S",
+   "si_lon": "153 25.019 E",
+   "lat": -27.9283,
+   "lon": 153.416983,
+   "note": "Port lateral. SI 10.1: an IALA navigation mark - keep a safe clearance."
+  }
+ ],
+ "courses": [
+  {
+   "id": "1",
+   "name": "southerly · Wave-Break start, Wave-Break finish",
+   "type": "PURSUIT",
+   "start": "WBS1",
+   "finish": "WBF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "F",
+       "P"
+      ],
+      [
+       "J",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 6.8
+    },
+    "D2": {
+     "seq": [
+      [
+       "C",
+       "P"
+      ],
+      [
+       "J",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 5.5
+    }
+   },
+   "wind": "S"
+  },
+  {
+   "id": "2",
+   "name": "southerly · Main Beach start, Wave-Break finish",
+   "type": "PURSUIT",
+   "start": "MBSF",
+   "finish": "WBF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "F",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 7.1
+    },
+    "D2": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 6.3
+    }
+   },
+   "wind": "S"
+  },
+  {
+   "id": "3",
+   "name": "southerly · Main Beach start, Wave-Break finish",
+   "type": "PURSUIT",
+   "start": "MBSF",
+   "finish": "WBF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 7.5
+    },
+    "D2": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 7.1
+    }
+   },
+   "wind": "S"
+  },
+  {
+   "id": "4",
+   "name": "southerly · Main Beach start, Wave-Break finish",
+   "type": "PURSUIT",
+   "start": "MBSF",
+   "finish": "WBF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "C",
+       "S"
+      ],
+      [
+       "F",
+       "P"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 7.9
+    },
+    "D2": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "C",
+       "S"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 6.7
+    }
+   },
+   "wind": "S"
+  },
+  {
+   "id": "5",
+   "name": "southerly · Main Beach start, Wave-Break finish",
+   "type": "PURSUIT",
+   "start": "MBSF",
+   "finish": "WBF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "F",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 8.3
+    },
+    "D2": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 6.9
+    }
+   },
+   "wind": "S"
+  },
+  {
+   "id": "6",
+   "name": "southerly · Main Beach start, Wave-Break finish",
+   "type": "PURSUIT",
+   "start": "MBSF",
+   "finish": "WBF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 8.3
+    },
+    "D2": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 7.2
+    }
+   },
+   "wind": "S"
+  },
+  {
+   "id": "7",
+   "name": "southerly · Main Beach start, Wave-Break finish",
+   "type": "PURSUIT",
+   "start": "MBSF",
+   "finish": "WBF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "F",
+       "P"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 8.4
+    },
+    "D2": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 7.8
+    }
+   },
+   "wind": "S"
+  },
+  {
+   "id": "8",
+   "name": "southerly · Main Beach start, Wave-Break finish",
+   "type": "PURSUIT",
+   "start": "MBSF",
+   "finish": "WBF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 9.5
+    },
+    "D2": {
+     "seq": [
+      [
+       "H",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 8.4
+    }
+   },
+   "wind": "S"
+  },
+  {
+   "id": "9",
+   "name": "northerly · Wave-Break start, Wave-Break finish",
+   "type": "PURSUIT",
+   "start": "WBS1",
+   "finish": "WBF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "E",
+       "S"
+      ],
+      [
+       "C",
+       "S"
+      ],
+      [
+       "F",
+       "P"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "C",
+       "S"
+      ],
+      [
+       "F",
+       "P"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 6.8
+    },
+    "D2": {
+     "seq": [
+      [
+       "E",
+       "S"
+      ],
+      [
+       "C",
+       "S"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "C",
+       "S"
+      ],
+      [
+       "F",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 5.4
+    }
+   },
+   "wind": "N"
+  },
+  {
+   "id": "10",
+   "name": "northerly · Wave-Break start, Main Beach finish",
+   "type": "PURSUIT",
+   "start": "WBS1",
+   "finish": "MBSF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "E",
+       "S"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 7.1
+    },
+    "D2": {
+     "seq": [
+      [
+       "E",
+       "S"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 5.8
+    }
+   },
+   "wind": "N"
+  },
+  {
+   "id": "11",
+   "name": "northerly · Wave-Break start, Main Beach finish",
+   "type": "PURSUIT",
+   "start": "WBS1",
+   "finish": "MBSF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "E",
+       "S"
+      ],
+      [
+       "C",
+       "S"
+      ],
+      [
+       "F",
+       "P"
+      ],
+      [
+       "G",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "G",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 7.7
+    },
+    "D2": {
+     "seq": [
+      [
+       "E",
+       "S"
+      ],
+      [
+       "C",
+       "S"
+      ],
+      [
+       "G",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 6.6
+    }
+   },
+   "wind": "N"
+  },
+  {
+   "id": "12",
+   "name": "northerly · Wave-Break start, Main Beach finish",
+   "type": "PURSUIT",
+   "start": "WBS1",
+   "finish": "MBSF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "J",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 8.1
+    },
+    "D2": {
+     "seq": [
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 6.8
+    }
+   },
+   "wind": "N"
+  },
+  {
+   "id": "13",
+   "name": "northerly · Wave-Break start, Main Beach finish",
+   "type": "PURSUIT",
+   "start": "WBS1",
+   "finish": "MBSF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "E",
+       "S"
+      ],
+      [
+       "C",
+       "S"
+      ],
+      [
+       "F",
+       "P"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "C",
+       "S"
+      ],
+      [
+       "F",
+       "P"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 9.0
+    },
+    "D2": {
+     "seq": [
+      [
+       "E",
+       "S"
+      ],
+      [
+       "C",
+       "S"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "J",
+       "S"
+      ],
+      [
+       "E",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 8.0
+    }
+   },
+   "wind": "N"
+  },
+  {
+   "id": "14",
+   "name": "Wave-Break start, Main Beach finish",
+   "type": "PURSUIT",
+   "start": "WBS1",
+   "finish": "MBSF",
+   "div": {
+    "D1": {
+     "seq": [
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "J",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "F",
+       "S"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 9.2
+    },
+    "D2": {
+     "seq": [
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "G",
+       "P"
+      ],
+      [
+       "C",
+       "P"
+      ],
+      [
+       "E",
+       "P"
+      ],
+      [
+       "H",
+       "S"
+      ]
+     ],
+     "si_nm": 7.5
+    }
+   }
+  },
+  {
+   "id": "15",
+   "name": "Offshore - set on the day (Div 1)",
+   "type": "OFFSHORE",
+   "builder": true,
+   "si": "SI 9.3 - when the OA decides to race Div 1 offshore, the course, start and finish lines and mark roundings come with the briefing email.",
+   "seq": []
+  }
+ ],
+ "zones": [
+  {
+   "id": "wonder-reef",
+   "name": "Wonder Reef",
+   "type": "prohibited",
+   "si": "SI 10.4 - prohibited area and obstruction. A boat shall not enter.",
+   "poly": [
+    -27.959883,
+    153.453117,
+    -27.959817,
+    153.45715,
+    -27.963433,
+    153.457233,
+    -27.963417,
+    153.45315
+   ]
+  }
+ ],
+ "schedule": [
+  {
+   "date": "2026-05-07",
+   "name": "Winter Twilight 1/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-05-14",
+   "name": "Winter Twilight 2/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-05-21",
+   "name": "Winter Twilight 3/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-05-28",
+   "name": "Winter Twilight 4/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-06-04",
+   "name": "Winter Twilight 5/13",
+   "type": "PURSUIT",
+   "note": "The SI prints this date as 4 May 2026; 4 June is the Thursday in sequence."
+  },
+  {
+   "date": "2026-06-11",
+   "name": "Winter Twilight 6/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-06-18",
+   "name": "Winter Twilight 7/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-06-25",
+   "name": "Winter Twilight 8/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-07-02",
+   "name": "Winter Twilight 9/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-07-09",
+   "name": "Winter Twilight 10/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-07-16",
+   "name": "Winter Twilight 11/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-08-27",
+   "name": "Winter Twilight 12/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-09-03",
+   "name": "Winter Twilight 13/13",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-09-10",
+   "name": "Spring Twilight 1/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-09-17",
+   "name": "Spring Twilight 2/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-09-24",
+   "name": "Spring Twilight 3/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-10-01",
+   "name": "Spring Twilight 4/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-10-08",
+   "name": "Spring Twilight 5/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-10-15",
+   "name": "Spring Twilight 6/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-10-22",
+   "name": "Spring Twilight 7/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-10-29",
+   "name": "Spring Twilight 8/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-11-05",
+   "name": "Spring Twilight 9/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-11-12",
+   "name": "Spring Twilight 10/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-11-19",
+   "name": "Spring Twilight 11/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-11-26",
+   "name": "Spring Twilight 12/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-12-03",
+   "name": "Spring Twilight 13/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-12-10",
+   "name": "Spring Twilight 14/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2026-12-17",
+   "name": "Fun Race & Christmas Party",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-01-14",
+   "name": "Summer Twilight 1/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-01-21",
+   "name": "Summer Twilight 2/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-01-28",
+   "name": "Summer Twilight 3/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-02-04",
+   "name": "Summer Twilight 4/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-02-11",
+   "name": "Summer Twilight 5/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-02-18",
+   "name": "Summer Twilight 6/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-02-25",
+   "name": "Summer Twilight 7/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-03-04",
+   "name": "Summer Twilight 8/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-03-11",
+   "name": "Summer Twilight 9/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-03-18",
+   "name": "Summer Twilight 10/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-04-01",
+   "name": "Summer Twilight 11/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-04-08",
+   "name": "Summer Twilight 12/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-04-15",
+   "name": "Summer Twilight 13/14",
+   "type": "PURSUIT"
+  },
+  {
+   "date": "2027-04-22",
+   "name": "Summer Twilight 14/14",
+   "type": "PURSUIT"
+  }
+ ],
+ "events": [
+  {
+   "from": "2026-05-09",
+   "to": "2026-05-09",
+   "name": "Julian Rocks (rescheduled)"
+  },
+  {
+   "from": "2026-06-06",
+   "to": "2026-06-06",
+   "name": "Flat Rock Yacht Race"
+  },
+  {
+   "from": "2026-07-30",
+   "to": "2026-07-30",
+   "name": "GCCM Gold Coast Mackay Yacht Race"
+  },
+  {
+   "from": "2026-09-05",
+   "to": "2026-09-05",
+   "name": "Sail Past & Blessing of the Fleet"
+  },
+  {
+   "from": "2026-09-06",
+   "to": "2026-09-06",
+   "name": "Breaking of the Flag & Da$h 4 Ca$h"
+  },
+  {
+   "from": "2026-10-03",
+   "to": "2026-10-05",
+   "name": "The Yacht Sales Co. Sail Paradise Regatta"
+  },
+  {
+   "from": "2026-11-01",
+   "to": "2026-11-01",
+   "name": "Cook Island Yacht Race"
+  },
+  {
+   "from": "2026-11-21",
+   "to": "2026-11-22",
+   "name": "John Macnamara Memorial Race"
+  },
+  {
+   "from": "2027-01-23",
+   "to": "2027-01-24",
+   "name": "Ted Elkes Memorial Regatta"
+  },
+  {
+   "from": "2027-02-06",
+   "to": "2027-02-06",
+   "name": "Surf to City"
+  },
+  {
+   "from": "2027-03-13",
+   "to": "2027-03-13",
+   "name": "Julian Rocks Yacht Race"
+  },
+  {
+   "from": "2027-03-20",
+   "to": "2027-03-20",
+   "name": "Ladies Day Race"
+  },
+  {
+   "from": "2027-03-21",
+   "to": "2027-03-21",
+   "name": "DUX Birthday Celebrations"
+  },
+  {
+   "from": "2027-04-24",
+   "to": "2027-04-24",
+   "name": "Burleigh Bash"
+  }
+ ]
+}

@@ -37,6 +37,11 @@ export class Course {
     this.lineEnds = opts.lineEnds ? opts.lineEnds.map(p => ({ ...p })) : [];
     this.windFrom = opts.windFrom == null ? null : opts.windFrom;
     this.finishSame = opts.finishSame !== false;
+    // Which published line the course starts and finishes on. Null means the
+    // pack's first line mark — the only line an offshore pack has. Twilight
+    // courses start and finish on different lines (WBS → WBF).
+    this.startId = opts.startId || null;
+    this.finishId = opts.finishId || null;
   }
 
   toJSON() {
@@ -44,7 +49,29 @@ export class Course {
       courseId: this.courseId, division: this.division,
       legs: this.legs, localMarks: this.localMarks,
       lineEnds: this.lineEnds, windFrom: this.windFrom, finishSame: this.finishSame,
+      startId: this.startId, finishId: this.finishId,
     };
+  }
+
+  /** The published line the course starts on. */
+  startMark() {
+    const lines = this.pack.marks.filter(m => m.kind === 'line');
+    return lines.find(m => m.id === this.startId) || lines[0] || null;
+  }
+
+  /** The published line the course finishes on — the start line unless the
+      course names a different one. */
+  finishMark() {
+    if (!this.finishId) return this.startMark();
+    return this.pack.marks.find(m => m.kind === 'line' && m.id === this.finishId)
+      || this.startMark();
+  }
+
+  /** Does the course finish back on the start line? Decides whether a pinned
+      start line is also evidence of finishing. */
+  finishesAtStart() {
+    const s = this.startMark(), f = this.finishMark();
+    return !s || !f || s.id === f.id;
   }
 
   /** Every mark available to the builder: pack marks plus ones added on the water. */
@@ -86,7 +113,7 @@ export class Course {
     this.legs = this.legs.filter(l => l.markId !== id);
   }
 
-  /** Where the start (and finish, unless separate) line sits. */
+  /** Where the start line sits: pinned ends win over the published position. */
   startPos() {
     if (this.lineEnds.length === 2) {
       return {
@@ -95,8 +122,15 @@ export class Course {
       };
     }
     if (this.lineEnds.length === 1) return { ...this.lineEnds[0] };
-    const sf = this.pack.marks.find(m => m.kind === 'line');
+    const sf = this.startMark();
     return sf && sf.lat != null ? { lat: sf.lat, lon: sf.lon } : null;
+  }
+
+  /** Where the finish line sits. Pinned ends only apply when it IS the start line. */
+  finishPos() {
+    if (this.finishesAtStart()) return this.startPos();
+    const fm = this.finishMark();
+    return fm && fm.lat != null ? { lat: fm.lat, lon: fm.lon } : null;
   }
 
   /**
@@ -107,7 +141,11 @@ export class Course {
   posOf(id) {
     const m = this.markById(id);
     if (!m) return null;
-    if (m.kind === 'line') return this.startPos();
+    if (m.kind === 'line') {
+      const sm = this.startMark();
+      if (sm && m.id === sm.id) return this.startPos();
+      return m.lat != null ? { lat: m.lat, lon: m.lon } : null;
+    }
     if (m.lat != null) return { lat: m.lat, lon: m.lon };
     if (m.id === 'X' && this.windFrom != null) {
       const s = this.startPos();
@@ -123,7 +161,7 @@ export class Course {
    */
   sequence() {
     const seq = [];
-    const sf = this.pack.marks.find(m => m.kind === 'line');
+    const sf = this.startMark();
     const startPos = this.startPos();
     seq.push({
       id: sf ? sf.id : 'SF', label: 'Start', role: 'start', side: null,
@@ -156,9 +194,10 @@ export class Course {
       });
     }
 
+    const fm = this.finishMark();
     seq.push({
-      id: sf ? sf.id : 'SF', label: 'Finish', role: 'finish', side: null,
-      pos: startPos, kind: 'line',
+      id: fm ? fm.id : (sf ? sf.id : 'SF'), label: 'Finish', role: 'finish', side: null,
+      pos: this.finishPos(), kind: 'line',
     });
     return seq;
   }
@@ -293,8 +332,10 @@ export class RoundingEngine {
 
   /** Returns 'line', 'proximity', or null — the mechanism that fired, if any. */
   crossedLine(fix, prev, wp) {
+    // Pinned line ends are the START line; they are only evidence of finishing
+    // when the course finishes back on that same line.
     const ends = this.course.lineEnds;
-    if (ends.length === 2 && prev) {
+    if (ends.length === 2 && prev && this.course.finishesAtStart()) {
       return crossesLine(prev, fix, ends[0], ends[1]) ? 'line' : null;
     }
     if (wp.pos && distNm(wp.pos, fix) < PROX_NM) return 'proximity';
