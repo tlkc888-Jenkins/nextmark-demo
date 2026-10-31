@@ -102,6 +102,10 @@ h3 { font-size: .82rem; margin: 20px 0 6px; text-transform: uppercase;
   border-top: 1px solid var(--line); padding-top: 7px;
 }
 .cdline.late { color: var(--warn); font-weight: 700; }
+
+/* the unmissable START — green, nothing else on the screen is */
+.btn.start { background: #2FB376; color: #04150C; font-weight: 800; border-color: #2FB376; }
+.btn.start:active { filter: brightness(1.15); }
 .cdstrip .stage {
   font-size: .64rem; letter-spacing: .14em; text-transform: uppercase;
   color: var(--accent); font-weight: 800; min-width: 92px;

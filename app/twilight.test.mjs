@@ -141,5 +141,47 @@ const bad = toSharedProposal(forged, new Course(pack, {}));
 ok('an unknown finish line is refused, not guessed at',
   bad.finishId === null && bad.problems.some(p => /NOPE/.test(p)), bad.problems.join(' | '));
 
+group('a single finish pin lays a 10 m east-west line');
+const pinC = new Course(pack, { courseId: '1', division: 'D2', startId: 'WBS1', finishId: 'WBF' });
+pinC.legs = [{ markId: 'C', side: 'P' }];
+// pinned from the staging area, 300 m north-east of the published WBF
+const pinPos = movePt({ lat: wbf.lat, lon: wbf.lon }, 45, 0.16);
+pinC.finishPin = { ...pinPos };
+const fe = pinC.finishEnds();
+ok('ends are ~10 m apart', Math.abs(distNm(fe[0], fe[1]) * 1852 - 10) < 0.5,
+  (distNm(fe[0], fe[1]) * 1852).toFixed(1) + ' m');
+ok('line is east-west', Math.abs(fe[0].lat - fe[1].lat) < 1e-9);
+ok('finish position is the pin, not the published WBF',
+  distNm(pinC.finishPos(), pinPos) < 1e-6 && distNm(pinC.finishPos(), wbf) > 0.1);
+ok('chart finish waypoint follows the pin', distNm(pinC.sequence().at(-1).pos, pinPos) < 1e-6);
+
+const eng3 = new RoundingEngine(pinC);
+eng3.wpIdx = 2;                                   // heading for the finish
+const south = movePt(pinPos, 180, 0.003), north = movePt(pinPos, 0, 0.003);
+const hit = eng3.step(north, south, 1_760_000_000_000);
+ok('crossing the pinned line is a LINE finish', hit.length === 1 && hit[0].how === 'line',
+  hit.map(e => e.how).join(','));
+
+// a boat that misses the 10 m line still finishes by proximity to the pin
+const eng4 = new RoundingEngine(pinC);
+eng4.wpIdx = 2;
+const east = movePt(pinPos, 90, 0.02);            // ~37 m abeam of the pin
+const miss = eng4.step(movePt(east, 0, 0.001), east, 1_760_000_000_000);
+ok('missing the line falls back to proximity', miss.length === 1 && miss[0].how === 'proximity',
+  miss.map(e => e.how).join(','));
+
+// the pin rides in the crew link
+const pinLink = decodeCourse(encodeCourse(pinC, {}));
+const pinProp = toSharedProposal(pinLink.data, new Course(pack, {}));
+ok('finish pin carried to the crew', pinProp.finishPin &&
+  distNm(pinProp.finishPin, pinPos) < 1e-4, JSON.stringify(pinProp.finishPin));
+const crewPin = new Course(pack, {});
+applySharedCourse(crewPin, pinProp);
+ok('crew engine finishes on the same laid line', !!crewPin.finishEnds());
+const badPin = toSharedProposal({ ...pinLink.data, fp: [999, 0] }, new Course(pack, {}));
+ok('an impossible pin is dropped with a warning',
+  badPin.finishPin === null && badPin.problems.some(p => /finish pin/.test(p)),
+  badPin.problems.join(' | '));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

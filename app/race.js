@@ -42,6 +42,9 @@ export class Course {
     // courses start and finish on different lines (WBS → WBF).
     this.startId = opts.startId || null;
     this.finishId = opts.finishId || null;
+    // A finish pinned on the water with a single fix. The line itself is laid
+    // through it, 5 m east and west — see finishEnds().
+    this.finishPin = opts.finishPin ? { ...opts.finishPin } : null;
   }
 
   toJSON() {
@@ -49,7 +52,7 @@ export class Course {
       courseId: this.courseId, division: this.division,
       legs: this.legs, localMarks: this.localMarks,
       lineEnds: this.lineEnds, windFrom: this.windFrom, finishSame: this.finishSame,
-      startId: this.startId, finishId: this.finishId,
+      startId: this.startId, finishId: this.finishId, finishPin: this.finishPin,
     };
   }
 
@@ -126,11 +129,25 @@ export class Course {
     return sf && sf.lat != null ? { lat: sf.lat, lon: sf.lon } : null;
   }
 
-  /** Where the finish line sits. Pinned ends only apply when it IS the start line. */
+  /** Where the finish line sits. A pin dropped on the water beats everything —
+      the RC does not anchor the finish in the same spot every week. */
   finishPos() {
+    if (this.finishPin) return { ...this.finishPin };
     if (this.finishesAtStart()) return this.startPos();
     const fm = this.finishMark();
     return fm && fm.lat != null ? { lat: fm.lat, lon: fm.lon } : null;
+  }
+
+  /**
+   * The finish line a single pin lays: 5 m east and 5 m west of the pin, so it
+   * can be dropped from the staging area with one tap. Crossing it in either
+   * direction is a real line crossing; a boat that misses the 10 m line still
+   * finishes by proximity to the pin.
+   */
+  finishEnds() {
+    if (!this.finishPin) return null;
+    const half = 5 / 1852;   // 5 m in nm
+    return [movePt(this.finishPin, 90, half), movePt(this.finishPin, 270, half)];
   }
 
   /**
@@ -332,10 +349,14 @@ export class RoundingEngine {
 
   /** Returns 'line', 'proximity', or null — the mechanism that fired, if any. */
   crossedLine(fix, prev, wp) {
-    // Pinned line ends are the START line; they are only evidence of finishing
-    // when the course finishes back on that same line.
+    // A pinned finish is the sharpest evidence there is: an actual crossing of
+    // the laid east-west line. Proximity to the pin remains the safety net.
+    const fe = this.course.finishEnds();
+    if (fe && prev && crossesLine(prev, fix, fe[0], fe[1])) return 'line';
+    // Pinned START line ends are only evidence of finishing when the course
+    // finishes back on that same line — and never when a finish pin exists.
     const ends = this.course.lineEnds;
-    if (ends.length === 2 && prev && this.course.finishesAtStart()) {
+    if (!fe && ends.length === 2 && prev && this.course.finishesAtStart()) {
       return crossesLine(prev, fix, ends[0], ends[1]) ? 'line' : null;
     }
     if (wp.pos && distNm(wp.pos, fix) < PROX_NM) return 'proximity';

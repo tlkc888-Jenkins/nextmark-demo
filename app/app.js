@@ -534,6 +534,7 @@ function draw() {
     nextPos: wp ? wp.pos : null,
     nextQuadrant: q,
     lineEnds: S.course.lineEnds,
+    finishEnds: S.course.finishEnds(),
     world: S.world,
     packCoast: S.packCoast,
     coastNote: S.packCoast && S.packCoast.attribution ? S.packCoast.attribution : 'Coast: Natural Earth',
@@ -770,13 +771,17 @@ function renderControls() {
   el('btn-gps').textContent = S.gps.on ? '📍 GPS on' : '📍 Start GPS';
   el('btn-gps').classList.toggle('on', S.gps.on);
   const go = el('btn-go');
-  if (S.phase === 'pre') { go.textContent = 'Abort start'; go.className = 'btn danger big'; }
-  else if (S.phase === 'racing') { go.textContent = '◼ Finish & save'; go.className = 'btn primary big'; }
-  else { go.textContent = 'Arm start'; go.className = 'btn primary big'; }
+  if (S.phase === 'pre') { go.textContent = 'Abort countdown'; go.className = 'btn danger big'; }
+  else if (S.phase === 'racing') { go.textContent = '◼ FINISH & SAVE'; go.className = 'btn primary big'; }
+  else { go.textContent = 'Arm start'; go.className = 'btn alt big'; }
+  el('btn-startnow').hidden = S.phase === 'racing' || S.phase === 'finished';
   el('btn-prev').disabled = !S.engine || S.engine.wpIdx <= 1;
   el('btn-next').disabled = !S.engine || S.engine.done();
   el('btn-ping').textContent = S.course && S.course.lineEnds.length
     ? `⚓ Line pinned (${S.course.lineEnds.length}/2)` : '⚓ Pin line end';
+  el('btn-pinfinish').textContent = S.course && S.course.finishPin
+    ? '🏁 Finish pinned' : '🏁 Pin finish';
+  el('btn-pinfinish').classList.toggle('on', !!(S.course && S.course.finishPin));
   el('follow').textContent = S.follow ? 'Follow boat' : 'Whole course';
   el('zoomwrap').hidden = !S.follow;
   el('btn-share').disabled = !S.course || !S.course.legs.length;
@@ -1287,7 +1292,7 @@ async function setCrew(on) {
 function applyCrewGating() {
   const crew = S.crew;
   el('crewbar').hidden = !crew;
-  for (const id of ['btn-go', 'armlen', 'btn-armat', 'armat', 'btn-ping']) {
+  for (const id of ['btn-startnow', 'btn-go', 'armlen', 'btn-armat', 'armat', 'btn-ping', 'btn-pinfinish']) {
     const node = el(id);
     if (node) node.hidden = crew;
   }
@@ -1543,51 +1548,97 @@ async function saveSettings() {
 
 // ---------- directory ----------
 
-function renderDirectory() {
+/** Every shipped pack, loaded once — the directory spans all of them. */
+async function allPacks() {
+  if (!S.allPacks) {
+    const out = [];
+    for (const p of PACKS) out.push(p.id === S.pack.id ? S.pack : await loadPack(p.url));
+    S.allPacks = out;
+  }
+  return S.allPacks;
+}
+
+const seriesTag = packId => packId.includes('offshore') ? 'Offshore' : 'Twilight';
+
+async function renderDirectory() {
   const box = el('dirlist');
   box.replaceChildren();
   const today = new Date().toISOString().slice(0, 10);
+  const q = el('racesearch').value.trim().toLowerCase();
+
+  let packs;
+  try { packs = await allPacks(); } catch { packs = [S.pack]; }
 
   const head = document.createElement('div');
   head.className = 'dirhead';
-  head.innerHTML = `<b>${escapeHtml(S.pack.club)}</b> · ${escapeHtml(S.pack.state)}, ${escapeHtml(S.pack.country)}` +
-    `<br><span class="hint">${escapeHtml(S.pack.source.title)}</span>`;
-  const link = document.createElement('a');
-  link.href = S.pack.source.url; link.target = '_blank'; link.rel = 'noopener';
-  link.className = 'mini'; link.textContent = 'Open the SIs';
-  head.append(document.createElement('br'), link);
+  head.innerHTML = `<b>${escapeHtml(S.pack.club)}</b> · ${escapeHtml(S.pack.state)}, ${escapeHtml(S.pack.country)}`;
+  for (const p of packs) {
+    const link = document.createElement('a');
+    link.href = p.source.url; link.target = '_blank'; link.rel = 'noopener';
+    link.className = 'mini'; link.textContent = `${seriesTag(p.id)} SIs`;
+    head.append(document.createElement('br'), link);
+  }
   box.append(head);
 
-  const upcoming = [
-    ...(S.pack.schedule || []).filter(s => s.date >= today).map(s => ({ date: s.date, name: s.name, kind: s.type })),
-    ...(S.pack.events || []).filter(e => e.to >= today).map(e => ({ date: e.from, name: e.name, kind: 'EVENT' })),
-  ].sort((a, b) => a.date.localeCompare(b.date));
+  // Both series in one list. Club events appear in each pack, so they are
+  // deduped by date+name; the first pack listing one decides where "Start
+  // race" lands (the offshore pack for the big events).
+  const all = [];
+  for (const p of packs) {
+    for (const s of p.schedule || []) {
+      all.push({ date: s.date, to: s.date, name: s.name, kind: s.type, packId: p.id });
+    }
+    for (const e of p.events || []) {
+      all.push({ date: e.from, to: e.to, name: e.name, kind: 'EVENT', packId: p.id });
+    }
+  }
+  all.sort((a, b) => a.date.localeCompare(b.date));
+  const seen = new Set();
+  const deduped = all.filter(r => {
+    const k = r.date + '|' + r.name;
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
 
-  const h2 = document.createElement('div'); h2.className = 'phead'; h2.textContent = 'Next races';
+  const match = r => r.name.toLowerCase().includes(q) || r.date.includes(q) ||
+    r.kind.toLowerCase().includes(q) || seriesTag(r.packId).toLowerCase().includes(q);
+  const rows = q ? deduped.filter(match) : deduped.filter(r => r.to >= today);
+
+  const h2 = document.createElement('div'); h2.className = 'phead';
+  h2.textContent = q ? `Matches for “${el('racesearch').value.trim()}”` : 'Next races — both series';
   box.append(h2);
-  if (!upcoming.length) box.append(hint('Nothing left on this season\'s schedule.'));
-  for (const r of upcoming.slice(0, 12)) {
+  if (!rows.length) box.append(hint(q ? 'No race matches that.' : 'Nothing left on this season\'s schedule.'));
+
+  for (const r of rows.slice(0, q ? 30 : 14)) {
     const row = document.createElement('div');
     row.className = 'dirrow';
     const d = new Date(r.date + 'T00:00:00');
     const days = Math.round((d - new Date(today + 'T00:00:00')) / 86400000);
+    const when = days < 0 ? d.getFullYear() !== new Date().getFullYear() ? String(d.getFullYear()) : 'past'
+      : days === 0 ? 'today' : days === 1 ? 'tomorrow' : days + ' days';
     row.innerHTML =
       `<span class="dd">${d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span>` +
       `<span class="dn">${escapeHtml(r.name)}</span>` +
-      `<span class="dk">${escapeHtml(r.kind)}</span>` +
-      `<span class="dt">${days === 0 ? 'today' : days === 1 ? 'tomorrow' : days + ' days'}</span>`;
+      `<span class="dk">${escapeHtml(r.kind)} · ${seriesTag(r.packId)}</span>` +
+      `<span class="dt">${when}</span>`;
     const b = document.createElement('button');
     b.className = 'mini';
     b.textContent = 'Start race';
-    b.onclick = async () => { await newRace(r.name); showPanel('course'); toast(`Started "${r.name}". Build the course from the briefing board.`, 7000); };
+    b.onclick = async () => {
+      if (r.packId !== S.pack.id && !(await switchPack(r.packId))) return;
+      await newRace(r.name);
+      showPanel('course');
+      toast(`Started "${r.name}" (${seriesTag(r.packId)}). Set the course, then arm your start.`, 7000);
+    };
     row.append(b);
     box.append(row);
   }
 
-  const h3 = document.createElement('div'); h3.className = 'phead'; h3.textContent = 'Other packs';
+  const h3 = document.createElement('div'); h3.className = 'phead'; h3.textContent = 'Other clubs';
   box.append(h3, hint(
-    'Only the Southport Yacht Club Offshore Division pack is extracted so far. ' +
-    'Each pack is a club\'s permanent marks and courses, so one download covers the whole season.'));
+    'Both Southport Yacht Club series are extracted: Offshore and Thursday Twilight. ' +
+    'A pack is a club\'s permanent marks and courses, so one download covers a whole season — ' +
+    'other clubs can be added the same way.'));
 }
 
 function hint(t) {
@@ -1598,7 +1649,9 @@ function hint(t) {
 // static UI and events
 // ---------------------------------------------------------------------------
 
-function buildStaticUi() {
+/** Everything on screen that belongs to the loaded pack. Idempotent, so a
+    series switch re-applies it in place. */
+function applyPackUi() {
   const rules = S.pack.rules;
   el('packname').textContent = S.pack.name;
   el('vhf').textContent = `VHF ${rules.vhf_race}` +
@@ -1610,6 +1663,7 @@ function buildStaticUi() {
     : 'Course — auto-advances within ~75 m of each mark';
 
   const sel = el('armlen');
+  sel.replaceChildren();
   const presets = rules.arm_presets ||
     [['5:00 (SI 12.1)', 300], ['3:00', 180], ['1:00', 60], ['0:20 test', 20]];
   for (const [label, sec] of presets) {
@@ -1618,10 +1672,57 @@ function buildStaticUi() {
   // Pursuit starts land on any minute of the clock, so this is a time field,
   // prefilled with the series' earliest start.
   el('armat').value = rules.first_start_hint || '11:00';
+  // division and preset options belong to the pack; renderBuilder refills them
+  el('division').replaceChildren();
+  el('preset').replaceChildren();
+}
+
+function buildStaticUi() {
+  applyPackUi();
+}
+
+/**
+ * Swap the loaded series in place — no reload, so it also works mid-flow from
+ * the race directory. Refused while a race is recording: the day's roundings
+ * belong to the pack they were scored against.
+ */
+async function switchPack(id) {
+  if (S.pack && S.pack.id === id) return true;
+  if (S.race && S.race.status === 'live') {
+    toast('Finish or save the recording race before switching series.', 7000);
+    return false;
+  }
+  if (S.course && S.course.legs.length &&
+    !confirm('Switching series clears the built course. Continue?')) return false;
+  const def = PACKS.find(p => p.id === id);
+  if (!def) return false;
+  let pack;
+  try { pack = await loadPack(def.url); } catch (e) { toast('Could not load that series. ' + e.message); return false; }
+  S.pack = pack;
+  await setSetting('pack', id);
+  S.course = new Course(pack, { division: await getSetting('division', 'D2') });
+  S.engine = new RoundingEngine(S.course);
+  S.packCoast = null;
+  loadPackCoast(pack.id, 'data/coast-syc.json').then(c => { S.packCoast = c; draw(); });
+  applyPackUi();
+  renderAll();
+  return true;
 }
 
 function wireEvents() {
   el('btn-gps').onclick = () => (S.gps.on ? stopGps() : startGps());
+
+  // The unmissable button: start racing right now, countdown or no countdown.
+  // The RC does not always start you when the app thought it would.
+  el('btn-startnow').onclick = async () => {
+    if (S.phase === 'racing' || S.phase === 'finished') return;
+    if (S.phase === 'pre' && !confirm('Override the countdown and start now?')) return;
+    if (!S.race) await newRace();
+    primeAudio();
+    startRacing(Date.now());
+    cue(1, 900, null);
+    toast('STARTED — racing. Auto-advance armed.', 5000);
+  };
 
   el('btn-go').onclick = async () => {
     if (S.phase === 'pre') { abortStart(); return; }
@@ -1674,21 +1775,26 @@ function wireEvents() {
     renderControls();
   };
 
+  // One tap in the staging area: the finish line is laid through the pin,
+  // 5 m east and west of it.
+  el('btn-pinfinish').onclick = () => {
+    if (S.course.finishPin) {
+      S.course.finishPin = null;
+      toast('Finish pin cleared — back to the published finish.');
+    } else {
+      if (!S.fix) { toast('No GPS fix yet.'); return; }
+      S.course.finishPin = { lat: S.fix.lat, lon: S.fix.lon };
+      toast('Finish pinned here — a 10 m east–west line through this spot. Crossing it is the finish.', 7000);
+    }
+    afterCourseEdit();
+    renderControls();
+  };
+
   el('follow').onclick = () => { S.follow = !S.follow; renderControls(); draw(); };
   el('zoom').oninput = () => draw();
 
   el('packsel').onchange = async e => {
-    const id = e.target.value;
-    if (id === S.pack.id) return;
-    // A recording race belongs to its pack; switching under it would re-score
-    // the day's roundings against the wrong marks.
-    if (S.race && S.race.status === 'live') {
-      toast('Finish or save the recording race before switching series.', 7000);
-      e.target.value = S.pack.id;
-      return;
-    }
-    await setSetting('pack', id);
-    location.reload();
+    if (!(await switchPack(e.target.value))) e.target.value = S.pack.id;
   };
   el('division').onchange = async e => {
     S.course.division = e.target.value;
@@ -1770,6 +1876,7 @@ function wireEvents() {
       t.classList.contains('on') && t.dataset.tab !== 'race' ? '' : t.dataset.tab);
   }
   el('warnbar').onclick = () => { el('warnbar').hidden = true; };
+  el('racesearch').oninput = () => renderDirectory();
 
   // Tapping a share link while the app is already open only changes the
   // fragment — the browser does not reload, so boot() never re-runs. Without

@@ -76,6 +76,7 @@ export function encodeCourse(course, opts = {}) {
   if (course.windFrom != null) payload.w = Math.round(course.windFrom);
   if (course.startId) payload.s = course.startId;
   if (course.finishId) payload.f = course.finishId;
+  if (course.finishPin) payload.fp = [round7(course.finishPin.lat), round7(course.finishPin.lon)];
   if (opts.crew) payload.k = 'crew';
 
   const json = JSON.stringify(payload);
@@ -164,6 +165,7 @@ export function toSharedProposal(data, course) {
     wind: data.w == null ? null : data.w,
     startId: null,
     finishId: null,
+    finishPin: null,
     legs: [],
     localMarks: [],
     lineEnds: [],
@@ -211,6 +213,15 @@ export function toSharedProposal(data, course) {
     if (lines.has(data[key])) out[field] = String(data[key]);
     else out.problems.push(`Shared course ${field === 'startId' ? 'starts' : 'finishes'} on "${data[key]}", which is not a published line.`);
   }
+
+  if (Array.isArray(data.fp)) {
+    const [lat, lon] = data.fp;
+    if (isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+      out.finishPin = { lat, lon };
+    } else {
+      out.problems.push('The shared finish pin has an impossible position and was dropped.');
+    }
+  }
   return out;
 }
 
@@ -229,6 +240,7 @@ export function applySharedCourse(course, prop) {
   if (prop.wind != null) course.windFrom = prop.wind;
   course.startId = prop.startId || null;
   course.finishId = prop.finishId || null;
+  course.finishPin = prop.finishPin ? { ...prop.finishPin } : null;
   course.lineEnds = prop.lineEnds.map(p => ({ ...p }));
   course.legs = prop.legs.map(l => ({ ...l }));
   return { ok: true, count: course.legs.length };

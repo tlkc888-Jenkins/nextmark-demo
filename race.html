@@ -82,11 +82,13 @@
 
   <div class="controls">
     <button class="btn primary big" id="btn-gps">📍 Start GPS</button>
+    <button class="btn start big" id="btn-startnow">▶ START</button>
     <button class="btn primary big" id="btn-go">Arm start</button>
     <select id="armlen" aria-label="Start sequence length"></select>
     <button class="btn alt" id="btn-armat">Arm for</button>
     <input type="time" id="armat" class="inp short" aria-label="Start time — your handicap time in a pursuit race">
     <button class="btn alt" id="btn-ping">⚓ Pin line end</button>
+    <button class="btn alt" id="btn-pinfinish">🏁 Pin finish</button>
     <button class="btn primary big" id="btn-crewstart" hidden>▶ Start recording</button>
     <button class="btn" id="btn-crewstop" hidden>Stop &amp; save</button>
     <button class="btn alt" id="btn-share">↗ Share course to crew</button>
@@ -187,6 +189,10 @@
 
   <section class="panel" data-panel="directory" hidden>
     <h2>Club &amp; races</h2>
+    <div class="row">
+      <input id="racesearch" class="inp" type="search"
+        placeholder="Search races — name, date or series" autocomplete="off">
+    </div>
     <div id="dirlist" class="dirlist"></div>
   </section>
 

@@ -266,6 +266,21 @@ export class Chart {
         this.svg.append(S('circle', { cx: p.x, cy: p.y, r: 3, fill: COL.line }));
       }
     }
+    // a pinned finish: the laid 10 m east-west line, plus a marker that stays
+    // visible when the line itself is smaller than a pixel
+    if (scene.finishEnds) {
+      const a = this.px(scene.finishEnds[0]), b = this.px(scene.finishEnds[1]);
+      const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+      this.svg.append(S('line', {
+        x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: COL.line,
+        'stroke-width': 2.4, opacity: 0.95,
+      }));
+      this.svg.append(S('circle', {
+        cx, cy, r: 5.5, fill: 'none', stroke: COL.line, 'stroke-width': 1.6,
+        'stroke-dasharray': '2.5 2', opacity: 0.95,
+      }));
+      this.svg.append(text(cx + 8, cy + 3.5, 'FIN', { fill: COL.line, size: 8.5, weight: 800 }));
+    }
   }
 
   drawTrack(track) {
